@@ -1,0 +1,106 @@
+/* InviteCollaborators.css */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.invite-container {
+  background: white;
+  border-radius: 10px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.title {
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.search-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.search-input {
+  padding: 8px 12px;
+  background-color: var(--field-hover-color);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.search-button {
+  padding: 8px 12px;
+  background-color: var(--field-hover-color);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.search-button:disabled {
+  background-color: #686869;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 8px;
+}
+
+.results-container {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.user-entry {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.user-entry input {
+  margin-right: 8px;
+}
+
+.user-entry p {
+  margin: 0;
+}
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.cancel-button,
+.invite-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cancel-button {
+  background-color: #e5e7eb;
+}
+
+.invite-button {
+  background-color: #000000;
+  color: white;
+}
+
+.invite-button:disabled {
+  background-color: #000000;
+  cursor: not-allowed;
+}

@@ -1,0 +1,141 @@
+/* app/page.module.css */
+
+.main {
+  scroll-behavior: smooth;
+
+  font-family: sans-serif;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loginButton {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  width: var(--navbar-buttons-width);
+  height: var(--navbar-buttons-height);
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  font-size: large;
+  font-weight: var(--font-weight-medium);
+}
+.loginButton:hover {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+.signupButton {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  width: var(--navbar-buttons-width);
+  height: var(--navbar-buttons-height);
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  font-size: large;
+  font-weight: var(--font-weight-medium);
+}
+.signupButton:hover {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.hero {
+  min-height: 60vh;
+
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 1rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.textBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 300px;
+}
+
+.textBlock h2 {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.textBlock p {
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.cta {
+  background: black;
+  color: white;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  border: none;
+  border-radius: 6px;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  max-width: 200px;
+  white-space: nowrap;
+}
+
+.cta:hover {
+  transform: scale(1.05);
+}
+
+.imageBlock {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 300px;
+}
+
+.glassCard {
+  animation: float 3s ease-in-out infinite alternate;
+
+  width: 90%;
+  aspect-ratio: 1/1;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #b2e0e6, #d9d9d9);
+  box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.25);
+}

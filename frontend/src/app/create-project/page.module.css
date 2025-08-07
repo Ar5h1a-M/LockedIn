@@ -1,0 +1,214 @@
+.title {
+  color: black;
+  font-weight: var(--font-weight-bold);
+  font-size: 30px;
+  padding: 1.5rem;
+  align-self: center;
+}
+
+/* Root level blocking */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none !important;
+}
+
+/* Block ALL background elements */
+body.modal-open > *:not([data-modal-root]) {
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  filter: blur(2px) !important;
+  opacity: 0.5 !important;
+  visibility: visible !important;
+  touch-action: none !important;
+}
+
+/* Multiple overlay layers */
+.createModal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 2147483647 !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  touch-action: none !important;
+  isolation: isolate !important;
+}
+
+.createModal::before,
+.createModal::after {
+  content: '' !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: -1 !important;
+  pointer-events: all !important;
+  touch-action: none !important;
+}
+
+.createBox {
+  position: relative !important;
+  width: 500px !important;
+  max-width: 90% !important;
+  min-height: 600px !important;
+  padding: 2rem !important;
+  background: var(--primary-color) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-direction: column !important;
+  pointer-events: all !important;
+  z-index: 2147483647 !important;
+  touch-action: none !important;
+  isolation: isolate !important;
+  margin: auto !important;
+}
+
+.createBox label {
+  align-self: flex-start;
+  font-weight: var(--font-weight-regular);
+  margin-bottom: 0.2rem;
+  font-size: 15px;
+}
+
+.createBox input {
+  width: var(--input-fields-width);
+  height: var(--input-fields-height);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--input-radius);
+  border: 1px solid #ccc;
+  background-color: var(--box-color);
+}
+
+.createBox select {
+  width: var(--input-fields-width);
+  height: var(--input-fields-height);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--input-radius);
+  border: 1px solid #ccc;
+  background-color: var(--box-color);
+}
+
+.createForm input:hover {
+  background-color: var(--field-hover-color);
+}
+
+.createForm button {
+  width: var(--card-buttons-width);
+  height: var(--card-buttons-height);
+  padding: 1rem;
+  background-color: var(--secondary-color);
+  color: white;
+  font-size: 25px;
+  font-weight: var(--font-weight-medium);
+  border: none;
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--secondary-color);
+  background-color: var(--box-color);
+  height: 2rem;
+  width: 2rem;
+  border-radius: var(--button-radius);
+  border: 1px solid #ccc;
+  display: block;
+  pointer-events: all;
+  z-index: 10000;
+}
+
+.closeButton:hover {
+  background-color: var(--field-hover-color);
+  cursor: pointer;
+}
+
+/* Ensure modal content remains interactive */
+.createModal * {
+  pointer-events: all !important;
+  touch-action: auto !important;
+}
+
+.createForm {
+  width: 100%;
+  pointer-events: all;
+}
+
+.createForm input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  pointer-events: all;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.radioOptions {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.radioContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: background-color 0.2s ease;
+}
+
+.radioInput {
+  accent-color: #000000;
+  transform: scale(1.8);
+  cursor: pointer;
+}
+
+.radioInput:hover {
+  background-color: var(--field-hover-color);
+}
+
+.buttonNext {
+  display: flex;
+  justify-content: center;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: var(--button-radius);
+  font-size: 12px;
+}
+
+.buttonWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
