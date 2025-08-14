@@ -10,6 +10,8 @@ import {
   FaThLarge,
 } from "react-icons/fa";
 
+import { useRouter } from "next/navigation"; /////to navigate to another page IMPORT
+
 import styles from "./page.module.css";
 
 const cards = [
@@ -31,19 +33,23 @@ const cards = [
 
 export default function Home() {
   const [dashboardActive, setDashboardActive] = useState(false);
+  const router = useRouter(); /////to navigate to another page CREATE INSTANCE
 
   return (
     <main className={styles.container}>
       <section className={styles.gridContainer}>
         {cards.map(({ id, label, icon }) => {
           const isDashboard = id === "dashboard";
-          const isActive = !isDashboard || dashboardActive;
+          const isActive = true ;//!isDashboard || dashboardActive;
 
           return (
             <div
               key={id}
               onClick={() => {
-                if (isDashboard) setDashboardActive(true);
+                if (isDashboard){
+                  setDashboardActive(true);
+                  router.push("/dashboard"); /////to navigate to another page MOVE TO PAGE
+                } 
               }}
               className={`${styles.card} ${!isActive ? styles.cardInactive : ""}`}
               aria-disabled={!isActive}
