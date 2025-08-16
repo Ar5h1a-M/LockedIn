@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 const SignUp = () => {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,17 +26,75 @@ const SignUp = () => {
       return;
     }
 
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long!");
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Implement sign-up logic here (e.g., API call)
-    alert("Sign-up coming soon!");
-    setIsLoading(false);
+    
+    try {
+      // Sign up the user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Insert user data into your users table
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+              full_name: fullName,
+            }
+          ]);
+
+        if (insertError) {
+          console.error('Error inserting user data:', insertError);
+          // Don't throw here as the auth signup was successful
+        }
+
+        alert("Account created successfully! Please check your email for verification.");
+        router.push("/login");
+      }
+    } catch (err: any) {
+      console.error(err);
+      if (err.message.includes('User already registered')) {
+        alert("An account with this email already exists. Please sign in instead.");
+      } else {
+        alert(err.message ?? "Sign-up failed");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
-    // TODO: Implement Google OAuth logic here
-    alert("Google Sign-up coming soon!");
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: siteUrl,
+        },
+      });
+      if (error) throw error;
+      // Will redirect; no need to unset loading here.
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message ?? "Google sign-up failed");
+      setIsLoading(false);
+    }
   };
 
   return (
