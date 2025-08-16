@@ -13,9 +13,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // const siteUrl =
+  //   process.env.NEXT_PUBLIC_SITE_URL ??                                    ///for prod
+  //   (typeof window !== "undefined" ? window.location.origin : "");
+
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (typeof window !== "undefined" ? window.location.origin : "");
+    process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +41,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: siteUrl, // dev -> localhost, prod -> Vercel
+          redirectTo: siteUrl,  ////////////// redirectTo: siteUrl, // dev -> localhost, prod -> Vercel
         },
       });
       if (error) throw error;
@@ -132,3 +135,6 @@ export default function Login() {
     </main>
   );
 }
+
+/// FIX: login worjs but redirects you to undeployed vercel website, we want to get redirected to localhost-> in supabase change Site url from vercel.app to local host
+/// CHANGE BACK TO VERCEL FOR PROD
