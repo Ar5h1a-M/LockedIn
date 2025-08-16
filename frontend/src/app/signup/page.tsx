@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
+import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { supabase } from "@/lib/supabaseClient";
 
-const SignUp = () => {
+export default function SignUp() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,8 +15,10 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL as string;          // e.g. https://lockedin-backsupa.onrender.com
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,74 +27,51 @@ const SignUp = () => {
       alert("Passwords do not match!");
       return;
     }
-
-    if (password.length < 6) {
-      alert("Password must be at least 6 characters long!");
+    if (!API_URL) {
+      alert("API URL is not configured.");
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      // Sign up the user
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          }
-        }
+      const resp = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName,
+        }),
       });
 
-      if (error) throw error;
-
-      if (data.user) {
-        // Insert user data into your users table
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: data.user.id,
-              email: data.user.email,
-              full_name: fullName,
-            }
-          ]);
-
-        if (insertError) {
-          console.error('Error inserting user data:', insertError);
-          // Don't throw here as the auth signup was successful
-        }
-
-        alert("Account created successfully! Please check your email for verification.");
-        router.push("/login");
+      if (!resp.ok) {
+        const j = await resp.json().catch(() => ({}));
+        throw new Error(j?.error || "Signup failed");
       }
+
+      alert("Account created successfully! Please check your email for verification.");
+      router.push("/login");
     } catch (err: any) {
       console.error(err);
-      if (err.message.includes('User already registered')) {
-        alert("An account with this email already exists. Please sign in instead.");
-      } else {
-        alert(err.message ?? "Sign-up failed");
-      }
+      alert(err?.message ?? "Sign-up failed");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Optional: allow “Sign up with Google” from the sign-up page too
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: siteUrl,
-        },
+        options: { redirectTo: siteUrl },
       });
       if (error) throw error;
-      // Will redirect; no need to unset loading here.
+      // browser will redirect; no need to unset loading
     } catch (err: any) {
       console.error(err);
-      alert(err.message ?? "Google sign-up failed");
+      alert(err?.message ?? "Google sign-in failed");
       setIsLoading(false);
     }
   };
@@ -202,13 +181,11 @@ const SignUp = () => {
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--primary)", fontWeight: "600" }}>
+          <Link href="/login" style={{ color: "var(--primary)", fontWeight: 600 }}>
             Sign in here
           </Link>
         </p>
       </form>
     </main>
   );
-};
-
-export default SignUp;
+}

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient"; 
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Login() {
   const router = useRouter();
@@ -13,12 +13,31 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // const siteUrl =
-  //   process.env.NEXT_PUBLIC_SITE_URL ??                                    ///for prod
-  //   (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+  // After redirect back from Google, verify with backend and go to dashboard
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const access_token = data?.session?.access_token;
+      if (!access_token) return; // not logged in
+
+      try {
+        await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+          body: JSON.stringify({}), // token is in header
+        });
+        router.push("/dashboard");
+      } catch (e) {
+        console.error("Backend verify failed:", e);
+      }
+    })();
+  }, [API_URL, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +45,19 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
+      // get token then verify with backend
+      const { data } = await supabase.auth.getSession();
+      const access_token = data?.session?.access_token;
+      if (access_token) {
+        await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+      }
       router.push("/dashboard");
     } catch (err: any) {
       console.error(err);
@@ -40,12 +72,9 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: siteUrl,  ////////////// redirectTo: siteUrl, // dev -> localhost, prod -> Vercel
-        },
+        options: { redirectTo: siteUrl },
       });
       if (error) throw error;
-      // Will redirect; no need to unset loading here.
     } catch (err: any) {
       console.error(err);
       alert(err.message ?? "Google sign-in failed");
@@ -62,13 +91,7 @@ export default function Login() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.5rem",
-            marginBottom: "1.5rem",
-          }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}
         >
           <FcGoogle size={24} />
           Continue with Google
@@ -114,14 +137,7 @@ export default function Login() {
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
 
-        <p
-          style={{
-            marginTop: "1rem",
-            textAlign: "center",
-            fontStyle: "italic",
-            color: "var(--muted)",
-          }}
-        >
+        <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
           “Success is the sum of small efforts, repeated day in and day out.” – Robert Collier
         </p>
 
@@ -135,6 +151,3 @@ export default function Login() {
     </main>
   );
 }
-
-/// FIX: login worjs but redirects you to undeployed vercel website, we want to get redirected to localhost-> in supabase change Site url from vercel.app to local host
-/// CHANGE BACK TO VERCEL FOR PROD
