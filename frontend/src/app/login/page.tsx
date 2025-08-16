@@ -1,28 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { FaEnvelope, FaLock } from "react-icons/fa"; // playfully simple icons
-import { FcGoogle } from "react-icons/fc"; // Google icon
+import { useRouter } from "next/navigation";
+import { FaEnvelope, FaLock } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient"; 
 
-const Login = () => {
+export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "");
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Add auth logic here
-    alert("Login coming soon!");
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message ?? "Sign-in failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // TODO: Add Google OAuth logic here
-    alert("Google Sign-in coming soon!");
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: siteUrl, // dev -> localhost, prod -> Vercel
+        },
+      });
+      if (error) throw error;
+      // Will redirect; no need to unset loading here.
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message ?? "Google sign-in failed");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,19 +111,24 @@ const Login = () => {
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
 
-        <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
+        <p
+          style={{
+            marginTop: "1rem",
+            textAlign: "center",
+            fontStyle: "italic",
+            color: "var(--muted)",
+          }}
+        >
           “Success is the sum of small efforts, repeated day in and day out.” – Robert Collier
         </p>
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" style={{ color: "var(--primary)", fontWeight: "600" }}>
+          <Link href="/signup" style={{ color: "var(--primary)", fontWeight: 600 }}>
             Sign up here
           </Link>
         </p>
       </form>
     </main>
   );
-};
-
-export default Login;
+}
