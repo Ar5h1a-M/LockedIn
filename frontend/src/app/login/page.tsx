@@ -59,9 +59,13 @@ export default function Login() {
         });
       }
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err:unknown ) {
       console.error(err);
-      alert(err.message ?? "Sign-in failed");
+      if (err instanceof Error) {
+        alert(err.message ?? "Sign-in failed");
+      } else {
+        alert("Sign-in failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,12 +79,19 @@ export default function Login() {
         options: { redirectTo: siteUrl },
       });
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      alert(err.message ?? "Google sign-in failed");
+
+      if (err instanceof Error) {
+        alert(err.message ?? "Google sign-in failed");
+      } else {
+        alert("Google sign-in failed");
+      }
+
       setIsLoading(false);
     }
   };
+
 
   return (
     <main>

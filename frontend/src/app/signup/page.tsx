@@ -51,9 +51,13 @@ export default function SignUp() {
 
       alert("Account created successfully! Please check your email for verification.");
       router.push("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      alert(err?.message ?? "Sign-up failed");
+      if (err instanceof Error) {
+        alert(err.message ?? "Sign-up failed");
+      } else {
+        alert("Sign-up failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +73,13 @@ export default function SignUp() {
       });
       if (error) throw error;
       // browser will redirect; no need to unset loading
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      alert(err?.message ?? "Google sign-in failed");
+      if (err instanceof Error) {
+        alert(err.message ?? "Google sign-in failed");
+      } else {
+        alert("Google sign-in failed");
+      }
       setIsLoading(false);
     }
   };
