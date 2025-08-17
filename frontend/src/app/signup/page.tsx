@@ -28,9 +28,15 @@ export default function SignUp() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const access_token = data?.session?.access_token;
+      
+      console.log("Signup useEffect - Has session:", !!data?.session);
+      console.log("Signup useEffect - API_URL:", API_URL);
+      
       if (!access_token || !API_URL) return;
 
       try {
+        console.log("Making signup request to:", `${API_URL}/api/auth/signup`);
+        
         const resp = await fetch(`${API_URL}/api/auth/signup`, {
           method: "POST",
           headers: {
@@ -39,12 +45,19 @@ export default function SignUp() {
           },
         });
 
+        console.log("Signup response status:", resp.status);
+
         if (resp.ok) {
           // Signup successful - redirect to menu
           router.push("/menu");
         } else {
-          const j = await resp.json().catch(() => ({}));
-          console.log("Signup error response:", j); // Debug log
+          const j = await resp.json().catch((e) => {
+            console.error("Failed to parse JSON:", e);
+            return {};
+          });
+          
+          console.log("Signup error response:", j);
+          console.log("Full response text:", await resp.text().catch(() => "Could not read response"));
           
           // Check if user already exists
           if (j?.error?.includes("already exists") || j?.error?.includes("Please login")) {
@@ -52,13 +65,14 @@ export default function SignUp() {
             await supabase.auth.signOut();
             router.push("/login");
           } else {
-            alert(j?.error || "Signup failed");
+            alert(j?.error || `Signup failed (Status: ${resp.status})`);
             await supabase.auth.signOut();
           }
         }
       } catch (e) {
         console.error("Backend verify failed:", e);
-        alert("Signup verification failed");
+        const errorMessage = e instanceof Error ? e.message : "Unknown error";
+        alert(`Signup verification failed: ${errorMessage}`);
         await supabase.auth.signOut();
       }
     })();

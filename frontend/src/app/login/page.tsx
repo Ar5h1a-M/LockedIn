@@ -25,9 +25,15 @@ export default function Login() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const access_token = data?.session?.access_token;
+      
+      console.log("Login useEffect - Has session:", !!data?.session);
+      console.log("Login useEffect - API_URL:", API_URL);
+      
       if (!access_token || !API_URL) return;
 
       try {
+        console.log("Making login request to:", `${API_URL}/api/auth/login`);
+        
         const resp = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
           headers: {
@@ -36,12 +42,19 @@ export default function Login() {
           },
         });
 
+        console.log("Login response status:", resp.status);
+        
         if (resp.ok) {
           // User exists - redirect to menu
           router.push("/menu");
         } else {
-          const j = await resp.json().catch(() => ({}));
-          console.log("Login error response:", j); // Debug log
+          const j = await resp.json().catch((e) => {
+            console.error("Failed to parse JSON:", e);
+            return {};
+          });
+          
+          console.log("Login error response:", j);
+          console.log("Full response text:", await resp.text().catch(() => "Could not read response"));
           
           // Check if the error is about user not found
           if (j?.error?.includes("User not found") || j?.error?.includes("Please sign up")) {
@@ -49,13 +62,14 @@ export default function Login() {
             await supabase.auth.signOut();
             router.push("/signup");
           } else {
-            alert(j?.error || "Login failed");
+            alert(j?.error || `Login failed (Status: ${resp.status})`);
             await supabase.auth.signOut();
           }
         }
       } catch (e) {
         console.error("Backend verify failed:", e);
-        alert("Login verification failed");
+        const errorMessage = e instanceof Error ? e.message : "Unknown error";
+        alert(`Login verification failed: ${errorMessage}`);
         await supabase.auth.signOut();
       }
     })();
