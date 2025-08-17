@@ -13,62 +13,50 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+  // Frontend envs
+  const siteUrl =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-  // After redirect back from Google, verify with backend and go to dashboard
+  // After Google redirects back to /login, verify with backend BEFORE redirecting
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const access_token = data?.session?.access_token;
-      if (!access_token) return; // not logged in
+      if (!access_token || !API_URL) return;
 
       try {
-        await fetch(`${API_URL}/api/auth/login`, {
+        const resp = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${access_token}`,
           },
-          body: JSON.stringify({}), // token is in header
+          body: JSON.stringify({}),
         });
-        router.push("/dashboard");
+
+        if (resp.ok) {
+          router.push("/dashboard");
+        } else {
+          const j = await resp.json().catch(() => ({}));
+          alert(j?.error || "Not authorized for this app");
+          await supabase.auth.signOut();
+        }
       } catch (e) {
         console.error("Backend verify failed:", e);
+        alert("Login verification failed");
+        await supabase.auth.signOut();
       }
     })();
   }, [API_URL, router]);
 
+  // Keep UI the same, but disable manual login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-
-      // get token then verify with backend
-      const { data } = await supabase.auth.getSession();
-      const access_token = data?.session?.access_token;
-      if (access_token) {
-        await fetch(`${API_URL}/api/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-        });
-      }
-      router.push("/dashboard");
-    } catch (err:unknown ) {
-      console.error(err);
-      if (err instanceof Error) {
-        alert(err.message ?? "Sign-in failed");
-      } else {
-        alert("Sign-in failed");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    alert("Email/password login is disabled. Please use Google.");
+    await handleGoogleLogin();
   };
 
   const handleGoogleLogin = async () => {
@@ -76,47 +64,35 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: siteUrl },
+        options: { redirectTo: `${siteUrl}/login` },
       });
-      if (error) throw error;
-    } catch (err: unknown) {
+      if (error) throw error; // browser will redirect
+    } catch (err) {
       console.error(err);
-
-      if (err instanceof Error) {
-        alert(err.message ?? "Google sign-in failed");
-      } else {
-        alert("Google sign-in failed");
-      }
-
+      alert(err instanceof Error ? err.message : "Google sign-in failed");
       setIsLoading(false);
     }
   };
 
-
   return (
     <main>
       <form onSubmit={handleLogin} aria-label="Login form">
-        <h1>Welcome Back to LockedIn</h1>
+        <h1>Welcome back</h1>
 
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={isLoading}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}
-        >
+        <button type="button" onClick={handleGoogleLogin} disabled={isLoading}>
           <FcGoogle size={24} />
           Continue with Google
         </button>
 
-        <div>
+        <div style={{ marginTop: "1rem" }}>
           <label htmlFor="email">
-            Email address
+            Email
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <FaEnvelope />
               <input
                 type="email"
                 id="email"
-                placeholder="your.email@university.edu"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

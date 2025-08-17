@@ -9,77 +9,37 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function SignUp() {
   const router = useRouter();
+
+  // Keep fields so the UI looks identical, but we won’t use them (Google-only)
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL as string;          // e.g. https://lockedin-backsupa.onrender.com
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (typeof window !== "undefined" ? window.location.origin : "");
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
+  // Disable manual sign up; route to Google instead
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    if (!API_URL) {
-      alert("API URL is not configured.");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const resp = await fetch(`${API_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          full_name: fullName,
-        }),
-      });
-
-      if (!resp.ok) {
-        const j = await resp.json().catch(() => ({}));
-        throw new Error(j?.error || "Signup failed");
-      }
-
-      alert("Account created successfully! Please check your email for verification.");
-      router.push("/login");
-    } catch (err: unknown) {
-      console.error(err);
-      if (err instanceof Error) {
-        alert(err.message ?? "Sign-up failed");
-      } else {
-        alert("Sign-up failed");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    alert("Email/password sign-up is disabled. Please continue with Google.");
+    await handleGoogleSignUp();
   };
 
-  // Optional: allow “Sign up with Google” from the sign-up page too
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: siteUrl },
+        options: { redirectTo: `${siteUrl}/login` }, // will land on /login to be verified by backend
       });
-      if (error) throw error;
-      // browser will redirect; no need to unset loading
-    } catch (err: unknown) {
+      if (error) throw error; // browser will redirect
+    } catch (err) {
       console.error(err);
-      if (err instanceof Error) {
-        alert(err.message ?? "Google sign-in failed");
-      } else {
-        alert("Google sign-in failed");
-      }
+      alert(err instanceof Error ? err.message : "Google sign-in failed");
       setIsLoading(false);
     }
   };
@@ -93,18 +53,13 @@ export default function SignUp() {
           type="button"
           onClick={handleGoogleSignUp}
           disabled={isLoading}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.5rem",
-            marginBottom: "1.5rem",
-          }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}
         >
           <FcGoogle size={24} />
           Continue with Google
         </button>
 
+        {/* The fields remain for layout parity only */}
         <div>
           <label htmlFor="fullName">
             Full Name
@@ -113,7 +68,7 @@ export default function SignUp() {
               <input
                 type="text"
                 id="fullName"
-                placeholder="Your full name"
+                placeholder="Enter your full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -125,13 +80,13 @@ export default function SignUp() {
 
         <div>
           <label htmlFor="email">
-            Email address
+            Email
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <FaEnvelope />
               <input
                 type="email"
                 id="email"
-                placeholder="your.email@university.edu"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -149,7 +104,7 @@ export default function SignUp() {
               <input
                 type="password"
                 id="password"
-                placeholder="Enter a password"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
