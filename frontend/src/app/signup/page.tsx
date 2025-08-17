@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 export default function SignUp() {
   const router = useRouter();
 
-  // Keep fields so the UI looks identical, but we won’t use them (Google-only)
+  // Keep fields so the UI looks identical, but we won't use them (Google-only)
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,39 +21,39 @@ export default function SignUp() {
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL ?? "";
-   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+  // After Google redirects back to /signup, verify with backend
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const access_token = data?.session?.access_token;
+      if (!access_token || !API_URL) return;
 
-useEffect(() => {
-  (async () => {
-    const { data } = await supabase.auth.getSession();
-    const access_token = data?.session?.access_token;
-    if (!access_token || !API_URL) return;
+      try {
+        const resp = await fetch(`${API_URL}/api/auth/signup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
 
-    try {
-      const resp = await fetch(`${API_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-
-      if (resp.ok) {
-        router.push("/menu");
-      } else {
-        const j = await resp.json().catch(() => ({}));
-        alert(j?.error || "Signup failed");
+        if (resp.ok) {
+          // Signup successful - redirect to menu
+          router.push("/menu");
+        } else {
+          const j = await resp.json().catch(() => ({}));
+          alert(j?.error || "Signup failed");
+          await supabase.auth.signOut();
+        }
+      } catch (e) {
+        console.error("Backend verify failed:", e);
+        alert("Signup verification failed");
         await supabase.auth.signOut();
       }
-    } catch (e) {
-      console.error("Backend verify failed:", e);
-      alert("Signup verification failed");
-      await supabase.auth.signOut();
-    }
-  })();
-}, [API_URL, router]);
-
+    })();
+  }, [API_URL, router]);
 
   // Disable manual sign up; route to Google instead
   const handleSignUp = async (e: React.FormEvent) => {
@@ -67,7 +67,7 @@ useEffect(() => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl}/signup` }, // will land on /login to be verified by backend
+        options: { redirectTo: `${siteUrl}/signup` }, // will land on /signup to be verified by backend
       });
       if (error) throw error; // browser will redirect
     } catch (err) {
@@ -172,7 +172,7 @@ useEffect(() => {
         </button>
 
         <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
-          “The future belongs to those who learn more skills and combine them creatively.” – Robert Greene
+          "The future belongs to those who learn more skills and combine them creatively." — Robert Greene
         </p>
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>

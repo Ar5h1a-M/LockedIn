@@ -20,37 +20,45 @@ export default function Login() {
       : process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-  // After Google redirects back to /login, verify with backend BEFORE redirecting
-useEffect(() => {
-  (async () => {
-    const { data } = await supabase.auth.getSession();
-    const access_token = data?.session?.access_token;
-    if (!access_token || !API_URL) return;
+  // After Google redirects back to /login, verify with backend
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const access_token = data?.session?.access_token;
+      if (!access_token || !API_URL) return;
 
-    try {
-      const resp = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      try {
+        const resp = await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
 
-      if (resp.ok) {
-        router.push("/menu");
-      } else {
-        const j = await resp.json().catch(() => ({}));
-        alert(j?.error || "Account not found");
+        if (resp.ok) {
+          // User exists - redirect to menu
+          router.push("/menu");
+        } else {
+          const j = await resp.json().catch(() => ({}));
+          
+          // Check if the error is about user not found
+          if (j?.error?.includes("User not found") || j?.error?.includes("Please sign up")) {
+            alert("Account not found. Please sign up first.");
+            await supabase.auth.signOut();
+            router.push("/signup");
+          } else {
+            alert(j?.error || "Login failed");
+            await supabase.auth.signOut();
+          }
+        }
+      } catch (e) {
+        console.error("Backend verify failed:", e);
+        alert("Login verification failed");
         await supabase.auth.signOut();
       }
-    } catch (e) {
-      console.error("Backend verify failed:", e);
-      alert("Login verification failed");
-      await supabase.auth.signOut();
-    }
-  })();
-}, [API_URL, router]);
-
+    })();
+  }, [API_URL, router]);
 
   // Keep UI the same, but disable manual login
   const handleLogin = async (e: React.FormEvent) => {
@@ -125,7 +133,7 @@ useEffect(() => {
         </button>
 
         <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
-          “Success is the sum of small efforts, repeated day in and day out.” – Robert Collier
+          "Success is the sum of small efforts, repeated day in and day out." — Robert Collier
         </p>
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
