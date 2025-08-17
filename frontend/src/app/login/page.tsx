@@ -41,14 +41,15 @@ export default function Login() {
           router.push("/menu");
         } else {
           const j = await resp.json().catch(() => ({}));
+          console.log("Login error response:", j); // Debug log
           
           // Check if the error is about user not found
           if (j?.error?.includes("User not found") || j?.error?.includes("Please sign up")) {
-            alert("Account not found. Please sign up first.");
+            alert(j.error); // Show the actual backend error message
             await supabase.auth.signOut();
             router.push("/signup");
           } else {
-            alert(j?.error || "Loginn failed");
+            alert(j?.error || "Login failed");
             await supabase.auth.signOut();
           }
         }

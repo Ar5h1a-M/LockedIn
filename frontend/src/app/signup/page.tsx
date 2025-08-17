@@ -44,8 +44,17 @@ export default function SignUp() {
           router.push("/menu");
         } else {
           const j = await resp.json().catch(() => ({}));
-          alert(j?.error || "Signupp failed");
-          await supabase.auth.signOut();
+          console.log("Signup error response:", j); // Debug log
+          
+          // Check if user already exists
+          if (j?.error?.includes("already exists") || j?.error?.includes("Please login")) {
+            alert(j.error); // Show the actual backend error message
+            await supabase.auth.signOut();
+            router.push("/login");
+          } else {
+            alert(j?.error || "Signup failed");
+            await supabase.auth.signOut();
+          }
         }
       } catch (e) {
         console.error("Backend verify failed:", e);
