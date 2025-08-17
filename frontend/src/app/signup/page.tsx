@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
@@ -21,6 +21,39 @@ export default function SignUp() {
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL ?? "";
+   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+
+useEffect(() => {
+  (async () => {
+    const { data } = await supabase.auth.getSession();
+    const access_token = data?.session?.access_token;
+    if (!access_token || !API_URL) return;
+
+    try {
+      const resp = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      if (resp.ok) {
+        router.push("/menu");
+      } else {
+        const j = await resp.json().catch(() => ({}));
+        alert(j?.error || "Signup failed");
+        await supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.error("Backend verify failed:", e);
+      alert("Signup verification failed");
+      await supabase.auth.signOut();
+    }
+  })();
+}, [API_URL, router]);
+
 
   // Disable manual sign up; route to Google instead
   const handleSignUp = async (e: React.FormEvent) => {

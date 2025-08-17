@@ -21,36 +21,36 @@ export default function Login() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
   // After Google redirects back to /login, verify with backend BEFORE redirecting
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const access_token = data?.session?.access_token;
-      if (!access_token || !API_URL) return;
+useEffect(() => {
+  (async () => {
+    const { data } = await supabase.auth.getSession();
+    const access_token = data?.session?.access_token;
+    if (!access_token || !API_URL) return;
 
-      try {
-        const resp = await fetch(`${API_URL}/api/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-          body: JSON.stringify({}),
-        });
+    try {
+      const resp = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
 
-        if (resp.ok) {
-          router.push("/menu");
-        } else {
-          const j = await resp.json().catch(() => ({}));
-          alert(j?.error || "Account not founddd, please Sign Up");
-          await supabase.auth.signOut();
-        }
-      } catch (e) {
-        console.error("Backend verify failed:", e);
-        alert("Login verification failed");
+      if (resp.ok) {
+        router.push("/menu");
+      } else {
+        const j = await resp.json().catch(() => ({}));
+        alert(j?.error || "Account not found");
         await supabase.auth.signOut();
       }
-    })();
-  }, [API_URL, router]);
+    } catch (e) {
+      console.error("Backend verify failed:", e);
+      alert("Login verification failed");
+      await supabase.auth.signOut();
+    }
+  })();
+}, [API_URL, router]);
+
 
   // Keep UI the same, but disable manual login
   const handleLogin = async (e: React.FormEvent) => {
