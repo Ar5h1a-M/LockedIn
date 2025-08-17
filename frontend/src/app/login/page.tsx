@@ -41,7 +41,7 @@ export default function Login() {
           router.push("/menu");
         } else {
           const j = await resp.json().catch(() => ({}));
-          alert(j?.error || "Account not found, please Sign Up");
+          alert(j?.error || "Account not founddd, please Sign Up");
           await supabase.auth.signOut();
         }
       } catch (e) {
