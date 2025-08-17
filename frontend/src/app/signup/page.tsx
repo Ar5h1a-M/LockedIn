@@ -172,7 +172,7 @@ export default function SignUp() {
         </button>
 
         <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
-          "The future belongs to those who learn more skills and combine them creatively." — Robert Greene
+          &ldquo;The future belongs to those who learn more skills and combine them creatively.&rdquo; — Robert Greene
         </p>
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>

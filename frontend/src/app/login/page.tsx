@@ -133,7 +133,7 @@ export default function Login() {
         </button>
 
         <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
-          "Success is the sum of small efforts, repeated day in and day out." — Robert Collier
+          &ldquo;Success is the sum of small efforts, repeated day in and day out.&rdquo; — Robert Collier
         </p>
 
         <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
