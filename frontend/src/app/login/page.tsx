@@ -48,7 +48,7 @@ export default function Login() {
             await supabase.auth.signOut();
             router.push("/signup");
           } else {
-            alert(j?.error || "Login failed");
+            alert(j?.error || "Loginn failed");
             await supabase.auth.signOut();
           }
         }

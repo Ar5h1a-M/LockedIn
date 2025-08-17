@@ -44,7 +44,7 @@ export default function SignUp() {
           router.push("/menu");
         } else {
           const j = await resp.json().catch(() => ({}));
-          alert(j?.error || "Signup failed");
+          alert(j?.error || "Signupp failed");
           await supabase.auth.signOut();
         }
       } catch (e) {
