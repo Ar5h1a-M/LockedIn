@@ -38,7 +38,7 @@ export default function Login() {
         });
 
         if (resp.ok) {
-          router.push("/dashboard");
+          router.push("/menu");
         } else {
           const j = await resp.json().catch(() => ({}));
           alert(j?.error || "Not authorized for this app");

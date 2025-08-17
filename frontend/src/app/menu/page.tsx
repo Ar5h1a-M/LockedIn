@@ -18,7 +18,7 @@ const cards = [
   { id: "profiles", label: "User Profiles", icon: <FaUserCircle size={64} /> },
   {
     id: "search",
-    label: "Study Parrrrrtner Search",
+    label: "Study Partner Search",
     icon: <FaUsers size={64} />,
   },
   {
