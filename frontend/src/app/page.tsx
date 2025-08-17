@@ -1,73 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  FaUserCircle,
-  FaUsers,
-  FaCalendarAlt,
-  FaChartBar,
-  FaComments,
-  FaThLarge,
-} from "react-icons/fa";
-
-import { useRouter } from "next/navigation"; /////to navigate to another page IMPORT
-
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
-const cards = [
-  { id: "profiles", label: "User Profiles", icon: <FaUserCircle size={64} /> },
-  {
-    id: "search",
-    label: "Study Parrrrrtner Search",
-    icon: <FaUsers size={64} />,
-  },
-  {
-    id: "planner",
-    label: "Group Session Planner",
-    icon: <FaCalendarAlt size={64} />,
-  },
-  { id: "progress", label: "Progress Tracker", icon: <FaChartBar size={64} /> },
-  { id: "chat", label: "Chat Functionality", icon: <FaComments size={64} /> },
-  { id: "dashboard", label: "Dashboard", icon: <FaThLarge size={64} /> },
-];
-
-export default function Home() {
-  const [dashboardActive, setDashboardActive] = useState(false);
-  const router = useRouter(); /////to navigate to another page CREATE INSTANCE
+export default function LandingPage() {
+  const router = useRouter();
 
   return (
-    <main className={styles.container}>
-      <section className={styles.gridContainer}>
-        {cards.map(({ id, label, icon }) => {
-          const isDashboard = id === "dashboard";
-          const isActive = true ;//!isDashboard || dashboardActive;
+    <main className={styles.landing}>
+      {/* Header */}
+      <header className={styles.header}>
+        <h1 className={styles.logo}>LockedIn</h1>
+        <button onClick={() => router.push("/login")} className={styles.loginButton}>
+          Log In
+        </button>
+      </header>
 
-          return (
-            <div
-              key={id}
-              onClick={() => {
-                if (isDashboard){
-                  setDashboardActive(true);
-                  router.push("/dashboard"); /////to navigate to another page MOVE TO PAGE
-                } 
-              }}
-              className={`${styles.card} ${!isActive ? styles.cardInactive : ""}`}
-              aria-disabled={!isActive}
-              aria-label={label + (isActive ? "" : " (inactive)")}
-              tabIndex={isActive ? 0 : -1}
-            >
-              <div className={styles.iconWrapper} aria-hidden="true">
-                {icon}
-              </div>
-              <h2 className={styles.label}>{label}</h2>
-              <div
-                className={`${styles.accentLine} ${
-                  !isActive ? styles.accentLineInactive : ""
-                }`}
-              />
-            </div>
-          );
-        })}
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <h2 className={styles.title}>Your Ultimate Study Buddy</h2>
+        <p className={styles.subtitle}>
+          LockedIn helps you <strong>find study partners</strong>, 
+          <strong> form groups</strong>, and <strong>track your progress</strong> — 
+          so you stay motivated and succeed together.
+        </p>
+        <button
+          className={styles.ctaButton}
+          onClick={() => router.push("/signup")}
+        >
+          Get Started
+        </button>
+      </section>
+
+      {/* Features Section */}
+      <section className={styles.features}>
+        <div className={styles.featureCard}>
+          <h3>🤝 Find Partners</h3>
+          <p>Connect with like-minded students to study smarter, not harder.</p>
+        </div>
+        <div className={styles.featureCard}>
+          <h3>📅 Plan Sessions</h3>
+          <p>Organize group study sessions and never miss a deadline.</p>
+        </div>
+        <div className={styles.featureCard}>
+          <h3>📊 Track Progress</h3>
+          <p>Visualize your study habits and monitor your improvement.</p>
+        </div>
       </section>
     </main>
   );
