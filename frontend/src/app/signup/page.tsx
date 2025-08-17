@@ -34,7 +34,7 @@ export default function SignUp() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl}/login` }, // will land on /login to be verified by backend
+        options: { redirectTo: `${siteUrl}/signup` }, // will land on /login to be verified by backend
       });
       if (error) throw error; // browser will redirect
     } catch (err) {
