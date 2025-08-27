@@ -3,18 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
+import { FaGraduationCap, FaBook, FaLightbulb, FaPlus, FaMinus } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
+
+// Helper: load options from txt files
+async function fetchOptions(file: string): Promise<string[]> {
+  try {
+    const resp = await fetch(`/data/${file}`);
+    const text = await resp.text();
+    return text.split("\n").map((line) => line.trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
 
 export default function SignUp() {
   const router = useRouter();
+  const [degrees, setDegrees] = useState<string[]>([]);
+  const [modules, setModules] = useState<string[]>([]);
 
-  // Keep fields so the UI looks identical, but we won't use them (Google-only)
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [selectedDegree, setSelectedDegree] = useState("");
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [interest, setInterest] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const siteUrl =
@@ -23,76 +34,77 @@ export default function SignUp() {
       : process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-  // After Google redirects back to /signup, verify with backend
+  // Load dropdown data
+  useEffect(() => {
+    fetchOptions("degrees.txt").then(setDegrees);
+    fetchOptions("modules.txt").then(setModules);
+  }, []);
+
+  // After Google redirect back to /signup → call backend to create profile
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const access_token = data?.session?.access_token;
-      
-      console.log("Signup useEffect - Has session:", !!data?.session);
-      console.log("Signup useEffect - API_URL:", API_URL);
-      
       if (!access_token || !API_URL) return;
 
+      // Only proceed if user has selected info
+      if (!selectedDegree || selectedModules.length === 0 || !interest) return;
+
+      const filteredModules = selectedModules.filter(m => m.trim() !== "");
+      if (filteredModules.length === 0) return;
+
       try {
-        console.log("Making signup request to:", `${API_URL}/api/auth/signup`);
-        
         const resp = await fetch(`${API_URL}/api/auth/signup`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${access_token}`,
           },
+          body: JSON.stringify({
+            degree: selectedDegree,
+            modules: filteredModules,
+            interest,
+          }),
         });
 
-        console.log("Signup response status:", resp.status);
-
         if (resp.ok) {
-          // Signup successful - redirect to menu
           router.push("/menu");
         } else {
-          const j = await resp.json().catch((e) => {
-            console.error("Failed to parse JSON:", e);
-            return {};
-          });
-          
-          console.log("Signup error response:", j);
-          console.log("Full response text:", await resp.text().catch(() => "Could not read response"));
-          
-          // Check if user already exists
-          if (j?.error?.includes("already exists") || j?.error?.includes("Please login")) {
-            alert(j.error); // Show the actual backend error message
-            await supabase.auth.signOut();
-            router.push("/login");
-          } else {
-            alert(j?.error || `Signup failed (Status: ${resp.status})`);
-            await supabase.auth.signOut();
-          }
+          const j = await resp.json().catch(() => ({}));
+          alert(j?.error || `Signup failed (Status: ${resp.status})`);
+          await supabase.auth.signOut();
         }
       } catch (e) {
-        console.error("Backend verify failed:", e);
-        const errorMessage = e instanceof Error ? e.message : "Unknown error";
-        alert(`Signup verification failed: ${errorMessage}`);
+        console.error("Signup failed:", e);
+        alert("Signup failed");
         await supabase.auth.signOut();
       }
     })();
-  }, [API_URL, router]);
+  }, [API_URL, router, selectedDegree, selectedModules, interest]);
 
-  // Disable manual sign up; route to Google instead
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Email/password sign-up is disabled. Please continue with Google.");
-    await handleGoogleSignUp();
-  };
+  // Handle “Complete Signup” → validate fields then start Google OAuth
+  const handleCompleteSignup = async () => {
+    if (!selectedDegree) {
+      alert("Please select a degree.");
+      return;
+    }
+    const filteredModules = selectedModules.filter(m => m.trim() !== "");
+    if (filteredModules.length === 0) {
+      alert("Please select at least one module.");
+      return;
+    }
+    if (!interest.trim()) {
+      alert("Please enter your study interest.");
+      return;
+    }
 
-  const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl}/signup` }, // will land on /signup to be verified by backend
+        options: { redirectTo: `${siteUrl}/signup` },
       });
-      if (error) throw error; // browser will redirect
+      if (error) throw error;
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : "Google sign-in failed");
@@ -100,98 +112,140 @@ export default function SignUp() {
     }
   };
 
+  // Module management
+  const addModule = () => setSelectedModules(prev => [...prev, ""]);
+  const removeModule = (index: number) => setSelectedModules(prev => prev.filter((_, i) => i !== index));
+  const updateModule = (index: number, value: string) =>
+    setSelectedModules(prev => prev.map((m, i) => i === index ? value : m));
+  const getAvailableModules = (currentIndex: number) => {
+    const selectedValues = selectedModules.filter((m, i) => i !== currentIndex && m.trim() !== "");
+    return modules.filter(m => !selectedValues.includes(m));
+  };
+
   return (
     <main>
-      <form onSubmit={handleSignUp} aria-label="Sign up form">
+      <form onSubmit={(e) => e.preventDefault()} aria-label="Sign up form">
         <h1>Create Your LockedIn Account</h1>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignUp}
-          disabled={isLoading}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.5rem" }}
-        >
-          <FcGoogle size={24} />
-          Continue with Google
-        </button>
-
-        {/* The fields remain for layout parity only */}
+        {/* Degree dropdown */}
         <div>
-          <label htmlFor="fullName">
-            Full Name
+          <label htmlFor="degree">
+            Degree
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <FaUser />
+              <FaGraduationCap />
+              <select
+                id="degree"
+                value={selectedDegree}
+                onChange={(e) => setSelectedDegree(e.target.value)}
+              >
+                <option value="">-- Select your degree --</option>
+                {degrees.map((deg) => (
+                  <option key={deg} value={deg}>{deg}</option>
+                ))}
+              </select>
+            </div>
+          </label>
+        </div>
+
+        {/* Modules dropdowns */}
+        <div>
+          <label>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              <FaBook />
+              <span>Modules</span>
+              <button
+                type="button"
+                onClick={addModule}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  padding: "0.25rem 0.5rem",
+                  fontSize: "0.875rem",
+                  backgroundColor: "var(--primary)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                <FaPlus size={12} /> Add Module
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {selectedModules.map((selectedModule, index) => (
+                <div key={index} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <select
+                    value={selectedModule}
+                    onChange={(e) => updateModule(index, e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">-- Select a module --</option>
+                    {getAvailableModules(index).map(mod => (
+                      <option key={mod} value={mod}>{mod}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeModule(index)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "32px",
+                      height: "32px",
+                      backgroundColor: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                    title="Remove module"
+                  >
+                    <FaMinus size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </label>
+        </div>
+
+        {/* Interest */}
+        <div>
+          <label htmlFor="interest">
+            Study Interest
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <FaLightbulb />
               <input
                 type="text"
-                id="fullName"
-                placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                aria-required="true"
+                id="interest"
+                placeholder="e.g. AI, data science"
+                value={interest}
+                onChange={(e) => setInterest(e.target.value)}
               />
             </div>
           </label>
         </div>
 
-        <div>
-          <label htmlFor="email">
-            Email
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <FaEnvelope />
-              <input
-                type="email"
-                id="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                aria-required="true"
-              />
-            </div>
-          </label>
-        </div>
-
-        <div>
-          <label htmlFor="password">
-            Password
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <FaLock />
-              <input
-                type="password"
-                id="password"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                aria-required="true"
-                minLength={6}
-              />
-            </div>
-          </label>
-        </div>
-
-        <div>
-          <label htmlFor="confirmPassword">
-            Confirm Password
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <FaLock />
-              <input
-                type="password"
-                id="confirmPassword"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                aria-required="true"
-                minLength={6}
-              />
-            </div>
-          </label>
-        </div>
-
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Sign Up"}
+        {/* Complete Signup Button */}
+        <button
+          type="button"
+          onClick={handleCompleteSignup}
+          disabled={isLoading}
+          style={{
+            marginTop: "1.5rem",
+            width: "100%",
+            padding: "0.75rem",
+            backgroundColor: "var(--primary)",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Complete Signup
         </button>
 
         <p style={{ marginTop: "1rem", textAlign: "center", fontStyle: "italic", color: "var(--muted)" }}>
