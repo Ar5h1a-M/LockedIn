@@ -1,4 +1,6 @@
-/* Educational-themed global styles */
+/* ===============================
+   Global Styles & Theme
+   =============================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap');
 
@@ -34,7 +36,9 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Links */
+/* ===============================
+   Links
+   =============================== */
 a {
   color: var(--primary);
   text-decoration: none;
@@ -47,7 +51,9 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Buttons */
+/* ===============================
+   Buttons
+   =============================== */
 button {
   background-color: var(--primary);
   color: white;
@@ -59,99 +65,13 @@ button {
   font-size: 1rem;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 2px 6px rgba(0, 122, 204, 0.4);
+  position: relative;
+  overflow: hidden;
 }
 
 button:hover {
   background-color: var(--accent);
   box-shadow: 0 4px 10px rgba(255, 180, 0, 0.7);
-}
-
-/* Inputs */
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 10px 15px;
-  margin-bottom: 18px;
-  border: 1.5px solid var(--muted);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  font-family: var(--font-family);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 8px var(--primary);
-}
-
-/* Labels */
-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--foreground);
-  font-size: 1rem;
-}
-
-/* Form container */
-form {
-  background-color: white;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(42, 58, 74, 0.15);
-  max-width: 400px;
-  margin: 40px auto;
-}
-
-/* Headings */
-h1, h2, h3, h4, h5 {
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: var(--primary);
-  text-align: center;
-  font-family: var(--font-family);
-}
-
-/* Helper texts */
-small {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-top: -12px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-/* Success & error messages */
-.success {
-  color: var(--success);
-}
-
-.error {
-  color: var(--error);
-}
-
-/* Utility classes */
-.text-center {
-  text-align: center;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-/* Add some playful subtle animation to buttons */
-button {
-  position: relative;
-  overflow: hidden;
 }
 
 button::after {
@@ -175,15 +95,302 @@ button:hover::after {
   left: 100%;
 }
 
-/* Responsive for small devices */
+/* Outline button style */
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  box-shadow: none;
+}
+
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* ===============================
+   Inputs
+   =============================== */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  font-family: var(--font-family);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+}
+
+/* ===============================
+   Labels
+   =============================== */
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+/* ===============================
+   Form container
+   =============================== */
+.form-container {
+  background-color: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(42, 58, 74, 0.15);
+  max-width: 800px;
+  margin: 40px auto;
+}
+
+/* ===============================
+   Headings
+   =============================== */
+h1, h2, h3, h4, h5 {
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--primary);
+  text-align: center;
+  font-family: var(--font-family);
+}
+
+/* ===============================
+   Helper texts
+   =============================== */
+small {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: -12px;
+  margin-bottom: 16px;
+}
+
+/* ===============================
+   Success & error messages
+   =============================== */
+.success {
+  color: var(--success);
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error {
+  color: var(--error);
+  background-color: rgba(229, 83, 83, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* ===============================
+   Utility classes
+   =============================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+/* ===============================
+   Profile Header
+   =============================== */
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(42, 58, 74, 0.1);
+  margin-bottom: 30px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+nav ul {
+  display: flex;
+  list-style: none;
+  gap: 20px;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--foreground);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+nav a:hover, nav a.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* ===============================
+   Form Layout
+   =============================== */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--muted);
+}
+
+.form-title {
+  color: var(--primary);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ===============================
+   Avatar
+   =============================== */
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 48px;
+  margin-bottom: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-weight: bold;
+}
+
+/* ===============================
+   Interests
+   =============================== */
+.interests-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.interest-tag {
+  background-color: var(--background);
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.remove-interest {
+  background: none;
+  border: none;
+  color: var(--error);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.remove-interest:hover {
+  background-color: rgba(229, 83, 83, 0.2);
+}
+
+/* ===============================
+   Footer
+   =============================== */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--foreground);
+  margin-top: 40px;
+}
+
+/* ===============================
+   Responsive
+   =============================== */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  nav ul {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
 @media (max-width: 480px) {
-  form {
+  .form-container {
     margin: 20px 15px;
     padding: 24px;
   }
 }
 
-
+/* ===============================
+   Dashboard Styles (from your 2nd file)
+   =============================== */
 .dashboard-wrapper {
   max-width: 1100px;
   margin: auto;
@@ -257,4 +464,3 @@ button:hover::after {
   border-radius: 6px;
   font-weight: bold;
 }
-
