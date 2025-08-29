@@ -3,6 +3,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
+
 
 type Friend = { id: string; full_name: string; email: string; degree?: string|null; };
 type Group = { id: string; name: string; module: string|null; owner_id: string; };
@@ -103,13 +105,13 @@ export default function GroupsPage() {
   };
 
   const cards = useMemo(() => groups.map(g => (
-    <div key={g.id} className="card" style={{ width: 280 }}>
-      <div className="card-body">
-        <h3>{g.name}</h3>
-        <p><small>Module: {g.module || "—"}</small></p>
-      </div>
+  <Link key={g.id} href={`/sessions/${g.id}`} className="card" style={{ width: 280, display: "block", textDecoration: "none", color: "inherit" }}>
+    <div className="card-body">
+      <h3>{g.name}</h3>
+      <p><small>Module: {g.module || "—"}</small></p>
     </div>
-  )), [groups]);
+  </Link>
+  )), [groups]);
 
   return (
     <main className="dashboard-wrapper">

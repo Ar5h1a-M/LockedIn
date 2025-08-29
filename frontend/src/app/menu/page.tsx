@@ -78,7 +78,7 @@ export default function Home() {
 
                 if (isProgress){
                   setProgressActive(true);
-                  router.push("/user_profiles"); //change to progress page when made
+                  router.push("/progress_tracker"); //change to progress page when made
                 } 
 
                 if (isChat){
