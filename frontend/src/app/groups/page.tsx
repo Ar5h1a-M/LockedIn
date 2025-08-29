@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import Sidebar from "@/components/Sidebar";
 
 
 type Friend = { id: string; full_name: string; email: string; degree?: string|null; };
@@ -114,7 +115,10 @@ export default function GroupsPage() {
   )), [groups]);
 
   return (
-    <main className="dashboard-wrapper">
+    <div className="dashboardLayout">
+            <Sidebar />
+    <main className="dashboardContent ">
+    <div className="dashboard-wrapper">
       <header className="dashboard-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <h1>👥 Study Groups</h1>
         <div style={{ display:"flex", gap:12 }}>
@@ -199,6 +203,8 @@ export default function GroupsPage() {
           </div>
         </div>
       )}
+      </div>
     </main>
+    </div>
   );
 }

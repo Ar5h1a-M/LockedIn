@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaGraduationCap, FaBook, FaLightbulb, FaPlus, FaMinus } from "react-icons/fa";
+import Sidebar from "@/components/Sidebar";
+
 type Profile = {
   id: string;
   full_name: string;
@@ -159,7 +161,10 @@ export default function SearchPage() {
   ];
 
   return (
-    <main className="dashboard-wrapper">
+    <div className="dashboardLayout">
+                <Sidebar />
+        <main className="dashboardContent ">
+        <div className="dashboard-wrapper">
       <header className="dashboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>🤝 Study Partner Search</h1>
         <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -263,6 +268,8 @@ export default function SearchPage() {
           ) : <p>No invitations received yet.</p>}
         </section>
       )}
+      </div>
     </main>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { X } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -86,7 +87,11 @@ const ProfileManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dashboardLayout">
+                <Sidebar />
+      <main className="dashboardContent ">
+        
+      <div className="dashboard-wrapper">
       {/* Header */}
       <div className="flex justify-between items-center px-6 py-4 shadow bg-white">
         <div className="text-xl font-bold">LockedIn</div>
@@ -228,6 +233,8 @@ const ProfileManagement: React.FC = () => {
           </Dialog.Panel>
         </div>
       </Dialog>
+      </div>
+    </main>
     </div>
   );
 };

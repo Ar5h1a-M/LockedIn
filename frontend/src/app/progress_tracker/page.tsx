@@ -2,6 +2,7 @@
 "use client";
 
 import { useState,useEffect } from "react";
+import Sidebar from "@/components/Sidebar";
 import {
   ResponsiveContainer,
   BarChart,
@@ -85,7 +86,11 @@ const handleLogHours = async () => {
   }
 
   return (
-    <main className={styles.container}>
+    <div className="dashboardLayout">
+                <Sidebar />
+        <main className="dashboardContent ">
+        <div className="dashboard-wrapper">
+    {/* <main className={styles.container}> */}
       <header className={styles.header}>
         <h1>Progress Tracker</h1>
         <p>Log your study hours and track your progress over time.</p>
@@ -182,7 +187,9 @@ const handleLogHours = async () => {
           </div>
         </div>
       </section>
+      </div>
     </main>
+    </div>
   );
 }
 
