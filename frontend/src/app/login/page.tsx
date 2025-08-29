@@ -47,7 +47,7 @@ export default function Login() {
         
         if (resp.ok) {
           // User exists - redirect to menu
-          router.push("/menu");
+          router.push("/dashboard");
         } else {
           const j = await resp.json().catch((e) => {
             console.error("Failed to parse JSON:", e);

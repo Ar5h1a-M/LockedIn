@@ -70,7 +70,7 @@ export default function SignUp() {
         });
 
         if (resp.ok) {
-          router.push("/menu");
+          router.push("/dashboard");
         } else {
           const j = await resp.json().catch(() => ({}));
           alert(j?.error || `Signup failed (Status: ${resp.status})`);
