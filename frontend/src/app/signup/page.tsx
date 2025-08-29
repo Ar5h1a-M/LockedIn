@@ -104,7 +104,12 @@ export default function SignUp() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl}/signup` },
+        options: {
+          redirectTo: `${siteUrl}/signup`,
+          queryParams: {
+            prompt: "select_account",   //  force chooser every time
+          },
+        },
       });
       if (error) throw error;
     } catch (err) {

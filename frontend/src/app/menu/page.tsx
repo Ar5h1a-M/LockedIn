@@ -66,6 +66,26 @@ export default function Home() {
                   router.push("/search"); 
                 } 
 
+                if (isProfiles){
+                  setProfilesActive(true);
+                  router.push("/user_profiles"); 
+                } 
+
+                if (isPlanner){
+                  setPlannerActive(true);
+                  router.push("/groups"); 
+                }
+
+                if (isProgress){
+                  setProgressActive(true);
+                  router.push("/user_profiles"); //change to progress page when made
+                } 
+
+                if (isChat){
+                  setChatActive(true);
+                  router.push("/user_profiles"); // change to chat page when made
+                } 
+
               }}
               className={`${styles.card} ${!isActive ? styles.cardInactive : ""}`}
               aria-disabled={!isActive}
