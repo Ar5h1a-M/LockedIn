@@ -85,7 +85,7 @@ export default function SearchPage() {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/api/invitations/received`, {
-          headers: { Authorization: `Bearer ${token} `},
+          headers: { Authorization: `Bearer ${token}`},
         }),
       ]);
       const sent = await sentResp.json();

@@ -1,25 +1,14 @@
  
+// Progress.tsx
 "use client";
 
-import { useState,useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import { useState, useEffect } from "react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import styles from "./page.module.css";
 import { supabase } from "@/lib/supabaseClient";
+import Sidebar from "@/components/Sidebar";
 
-type Entry = {
-  date: string;
-  hours: number;
-  productivity: number;
-  notes?: string;
-};
+type Entry = { date: string; hours: number; productivity: number; notes?: string; };
 
 export default function ProgressTracker() {
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -30,48 +19,65 @@ export default function ProgressTracker() {
   const [notes, setNotes] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
 
-  const authHeaders = async () => {
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
-  return token ? { Authorization: `Bearer ${token}` } : undefined;
-   };
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-   useEffect(() => {
-  (async () => {
+  const authHeaders = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  };
+
+useEffect(() => {
+  const fetchData = async () => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL!;
     const headers = await authHeaders();
+    if (!headers) return; // no session yet
+
     const resp = await fetch(`${API_URL}/api/progress`, { headers });
-    const j = await resp.json();
-    setEntries(j.entries || []);
-  })();
+    if (resp.ok) {
+      const j = await resp.json();
+      setEntries(j.entries || []);
+    }
+  };
+
+  // call immediately
+  fetchData();
+
+  // also refetch whenever session changes
+  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) fetchData();
+  });
+
+  return () => sub.subscription.unsubscribe();
 }, []);
 
 
-const handleLogHours = async () => {
-  if (!hours && hours !== 0) return;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+  const handleLogHours = async () => {
+    if (!hours && hours !== 0) return;
+    const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+    const resp = await fetch(`${API_URL}/api/progress`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ date, hours: Number(hours), productivity, notes }),
+    });
+    const j = await resp.json();
+    if (!resp.ok) return alert(j?.error || "Failed to save");
 
-  const resp = await fetch(`${API_URL}/api/progress`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ date, hours: Number(hours), productivity, notes }),
-  });
-  const j = await resp.json();
-  if (!resp.ok) return alert(j?.error || "Failed to save");
+    const existingIndex = entries.findIndex(e => e.date === date);
+    const newEntry = j.entry as Entry;
+    let updated = [...entries];
+    if (existingIndex >= 0) updated[existingIndex] = newEntry;
+    else updated = [newEntry, ...entries].slice(0, 7);
+    setEntries(updated);
 
-  // Merge into local state (keep at most last 7 for the UI if you like)
-  const existingIndex = entries.findIndex(e => e.date === date);
-  const newEntry = j.entry as Entry;
-  let updated = [...entries];
-  if (existingIndex >= 0) updated[existingIndex] = newEntry;
-  else updated = [newEntry, ...entries].slice(0, 7);
-  setEntries(updated);
+    setHours("");
+    setNotes("");
+    setProductivity(3);
+  };
 
-  setHours("");
-  setNotes("");
-  setProductivity(3);
-};
+  // … (the rest of your render unchanged)
+
+
 
   const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
   const avgHours = entries.length ? (totalHours / entries.length).toFixed(1) : 0;

@@ -4,10 +4,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import Sidebar from "@/components/Sidebar";
+
 
 type Session = {
   id: string;
   group_id: string;
+  creator_id: string;
   start_at: string;
   venue: string | null;
   topic: string | null;
@@ -20,6 +23,7 @@ type ChatMessage = {
   group_id: string;
   session_id: string | null;
   sender_id: string;
+  sender_name?: string | null; // NEW
   content: string | null;
   attachment_url: string | null;
   created_at: string;
@@ -64,7 +68,11 @@ export default function GroupSessionsPage() {
     setTimeout(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }), 0);
   };
 
+  const [me, setMe] = useState<string | null>(null);
+
+
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMe(data.user?.id ?? null));
     loadSessions();
     loadMessages();
     const t = setInterval(loadMessages, 2000);
@@ -90,6 +98,22 @@ export default function GroupSessionsPage() {
     setStartAt(""); setVenue(""); setTopic(""); setTimeGoal(""); setContentGoal("");
     loadSessions();
   };
+
+  const handleDeleteSession = async (sessionId: string) => {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+  const headers = await authHeaders();
+  const resp = await fetch(`${API_URL}/api/groups/${groupId}/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers
+  });
+  if (resp.ok) {
+    setSessions(prev => prev.filter(s => s.id !== sessionId));
+  } else {
+    const j = await resp.json();
+    alert(j.error || "Failed to delete session");
+  }
+};
+
 
   const sendMessage = async () => {
     if (!message && !file) return;
@@ -134,7 +158,10 @@ export default function GroupSessionsPage() {
   };
 
   return (
-    <main className="dashboard-wrapper">
+  <div className="dashboardLayout">
+              <Sidebar />
+      <main className="dashboardContent ">
+      <div className="dashboard-wrapper">
       <header className="dashboard-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <h1>📅 Group Sessions</h1>
       </header>
@@ -167,6 +194,16 @@ export default function GroupSessionsPage() {
                   <div><small>Topic: {s.topic || "—"}</small></div>
                   <div><small>Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}</small></div>
                   <div><small>Content goal: {s.content_goal || "—"}</small></div>
+
+                  {/* Delete button (only for creator) */}
+                  {me === s.creator_id && (
+                    <button
+                      onClick={() => handleDeleteSession(s.id)}
+                      style={{ marginTop: "6px", color: "red" }}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -178,19 +215,48 @@ export default function GroupSessionsPage() {
       <section className="dashboard-section" style={{ marginTop:16, display:"grid", gridTemplateColumns:"1fr", gap:16 }}>
         <div className="card">
           <h2>Group Chat</h2>
-          <div ref={listRef} style={{ height: 280, overflow: "auto", border: "1px solid #eee", borderRadius: 8, padding: 12 }}>
-            {messages.map(m => (
-              <div key={m.id} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 12, opacity: 0.7 }}>{new Date(m.created_at).toLocaleString()}</div>
-                {m.content && <div>{m.content}</div>}
-                {m.attachment_url && <div><a href={m.attachment_url} target="_blank" rel="noreferrer">📎 Attachment</a></div>}
-              </div>
-            ))}
+          <div ref={listRef}
+              style={{ height: 320,  border: "1px solid #eee",
+                        borderRadius: 8, padding: 12, background:"#f8fafc" }}>
+            {messages.map(m => {
+              const mine = m.sender_id === me;
+              return (
+                <div key={m.id} style={{
+                  display:"flex",
+                  justifyContent: mine ? "flex-end" : "flex-start",
+                  marginBottom: 10
+                }}>
+                  <div style={{
+                    maxWidth: "75%",
+                    background: mine ? "#DCF8C6" : "#ffffff", // WA vibe
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 12,
+                    padding: "8px 10px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,.06)"
+                  }}>
+                    {!mine && (
+                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color:"#475569" }}>
+                        {m.sender_name || "Unknown"}
+                      </div>
+                    )}
+                    {m.content && <div style={{ whiteSpace:"pre-wrap" }}>{m.content}</div>}
+                    {m.attachment_url && (
+                      <div style={{ marginTop: 6 }}>
+                        <a href={m.attachment_url} target="_blank" rel="noreferrer">📎 Attachment</a>
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, textAlign:"right", color:"#64748b", marginTop: 4 }}>
+                      {new Date(m.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div style={{ display:"flex", gap:8, marginTop:8, alignItems:"flex-end" }}>
+          <div style={{  gap:8, marginTop:8, alignItems:"flex-end" }}>
             <textarea
-              style={{ flex:1, minHeight: 80, resize: "vertical", padding: 10 }}
+              style={{ flex:1, minHeight: 90, resize: "vertical", padding: 10, borderRadius:8, border:"1px solid #e5e7eb" }}
               value={message}
               onChange={e => setMessage(e.target.value)}
               placeholder="Write a message… (Shift+Enter for newline)"
@@ -208,6 +274,8 @@ export default function GroupSessionsPage() {
           </div>
         </div>
       </section>
+      </div>
     </main>
+    </div>
   );
 }

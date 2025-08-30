@@ -57,7 +57,32 @@ export default function GroupsPage() {
     setInvites(j.invitations || []);
   };
 
-  useEffect(() => { loadGroups(); loadFriends(); loadInvites(); }, []);
+  useEffect(() => {
+  let mounted = true;
+
+  async function prime() {
+    const { data } = await supabase.auth.getSession();
+    if (!mounted) return;
+    if (data?.session?.access_token) {
+      await Promise.all([loadGroups(), loadFriends(), loadInvites()]);
+    }
+  }
+
+  // on mount + when auth changes
+  prime();
+  const { data: sub } = supabase.auth.onAuthStateChange((_e, _s) => { prime(); });
+
+  // refetch when tab gains focus
+  const onVis = () => { if (document.visibilityState === "visible") prime(); };
+  document.addEventListener("visibilitychange", onVis);
+
+  return () => {
+    mounted = false;
+    sub.subscription.unsubscribe();
+    document.removeEventListener("visibilitychange", onVis);
+  };
+}, []);
+
 
   const startCreate = () => { setGName(""); setGModule(""); setSelected([]); setStep(1); setShowCreate(true); };
 
