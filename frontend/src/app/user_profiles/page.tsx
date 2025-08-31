@@ -5,6 +5,15 @@ import { Dialog } from "@headlessui/react";
 import { X } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
+type Friend = {
+  id: string;
+  full_name: string;
+  email: string;
+  degree?: string;
+  modules?: string[];
+  interests?: string[];
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const ProfileManagement: React.FC = () => {
@@ -19,7 +28,7 @@ const ProfileManagement: React.FC = () => {
 
   // Friends modal state
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
-  const [friends, setFriends] = useState<any[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
 
   // Fetch profile on mount
   useEffect(() => {

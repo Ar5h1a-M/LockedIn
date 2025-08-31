@@ -123,7 +123,8 @@ export default function GroupSessionsPage() {
 
       if (file) {
         const { data: userData } = await supabase.auth.getUser();
-        const uid = userData.user?.id!;
+        const uid = userData.user?.id;
+        if (!uid) throw new Error("User not authenticated");
         const path = `${groupId}/${Date.now()}-${file.name}`;
         const { data, error } = await supabase.storage
           .from("group-uploads")
@@ -150,8 +151,9 @@ export default function GroupSessionsPage() {
       setFile(null);
       await loadMessages();
       listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-    } catch (e:any) {
-      alert(e.message || "Upload/send failed");
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Upload/send failed";
+      alert(errorMessage);
     } finally {
       setSending(false);
     }

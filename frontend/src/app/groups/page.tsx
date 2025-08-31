@@ -112,8 +112,9 @@ export default function GroupsPage() {
       setShowCreate(false);
       await Promise.all([loadGroups(), loadInvites()]);
       alert("Group created!");
-    } catch (e:any) {
-      alert(e.message || "Error");
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Upload/send failed";
+      alert(errorMessage);
     } finally {
       setCreating(false);
     }
