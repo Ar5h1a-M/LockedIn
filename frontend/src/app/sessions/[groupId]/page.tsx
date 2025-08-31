@@ -199,7 +199,7 @@ export default function GroupSessionsPage() {
                   {me === s.creator_id && (
                     <button
                       onClick={() => handleDeleteSession(s.id)}
-                      style={{ marginTop: "6px", color: "red" }}
+                      style={{ marginTop: "6px", color: "white" }}
                     >
                       Delete
                     </button>

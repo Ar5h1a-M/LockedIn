@@ -217,6 +217,7 @@ export default function SearchPage() {
               <li key={p.id} className="list-item" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <strong>{p.full_name}</strong><br />
+                  <p></p>
                   <small>
                     {searchType === "degree" && (p.degree || "—")}
                     {searchType === "interest" && (p.study_interest || "—")}

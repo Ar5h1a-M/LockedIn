@@ -137,7 +137,7 @@ export default function GroupsPage() {
       <p><small>Module: {g.module || "—"}</small></p>
     </div>
   </Link>
-  )), [groups]);
+  )), [groups]);
 
   return (
     <div className="dashboardLayout">
@@ -166,6 +166,7 @@ export default function GroupsPage() {
                 <li key={iv.id} className="list-item" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                   <div>
                     <strong>{iv.group_name}</strong><br/>
+                    <p></p>
                     <small>Module: {iv.group_module || "—"}</small>
                   </div>
                   {iv.status === "pending" ? (
