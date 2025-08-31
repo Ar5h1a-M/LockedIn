@@ -33,6 +33,11 @@ const cards = [
 
 export default function Home() {
   const [dashboardActive, setDashboardActive] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
+  const [profilesActive, setProfilesActive] = useState(false);
+  const [plannerActive, setPlannerActive] = useState(false);
+  const [progressActive, setProgressActive] = useState(false);
+  const [chatActive, setChatActive] = useState(false);
   const router = useRouter(); /////to navigate to another page CREATE INSTANCE
 
   return (
@@ -40,6 +45,11 @@ export default function Home() {
       <section className={styles.gridContainer}>
         {cards.map(({ id, label, icon }) => {
           const isDashboard = id === "dashboard";
+          const isSearch = id === "search";
+          const isProfiles = id === "profiles";
+          const isPlanner = id === "planner";
+          const isProgress = id === "progress";
+          const isChat = id === "chat";
           const isActive = true ;//!isDashboard || dashboardActive;
 
           return (
@@ -50,6 +60,32 @@ export default function Home() {
                   setDashboardActive(true);
                   router.push("/dashboard"); /////to navigate to another page MOVE TO PAGE
                 } 
+
+                if (isSearch){
+                  setSearchActive(true);
+                  router.push("/search"); 
+                } 
+
+                if (isProfiles){
+                  setProfilesActive(true);
+                  router.push("/user_profiles"); 
+                } 
+
+                if (isPlanner){
+                  setPlannerActive(true);
+                  router.push("/groups"); 
+                }
+
+                if (isProgress){
+                  setProgressActive(true);
+                  router.push("/progress_tracker"); //change to progress page when made
+                } 
+
+                if (isChat){
+                  setChatActive(true);
+                  router.push("/user_profiles"); // change to chat page when made
+                } 
+
               }}
               className={`${styles.card} ${!isActive ? styles.cardInactive : ""}`}
               aria-disabled={!isActive}

@@ -7,6 +7,7 @@ import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
+
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -46,7 +47,7 @@ export default function Login() {
         
         if (resp.ok) {
           // User exists - redirect to menu
-          router.push("/menu");
+          router.push("/dashboard");
         } else {
           const j = await resp.json().catch((e) => {
             console.error("Failed to parse JSON:", e);
@@ -87,8 +88,14 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl}/login` },
+        options: {
+          redirectTo: `${siteUrl}/login`,
+          queryParams: {
+            prompt: "select_account",   //  force chooser every time
+          },
+        },
       });
+      
       if (error) throw error; // browser will redirect
     } catch (err) {
       console.error(err);
