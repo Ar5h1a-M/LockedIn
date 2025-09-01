@@ -16,9 +16,9 @@ const mockGetSession = jest.fn().mockResolvedValue({
 jest.mock('@/lib/supabaseClient', () => ({
   supabase: {
     auth: {
-      signInWithOAuth: (...args: any[]) => mockSignInWithOAuth(...args),
-      signOut: (...args: any[]) => mockSignOut(...args),
-      getSession: (...args: any[]) => mockGetSession(...args),
+      signInWithOAuth: (...args: unknown[]) => mockSignInWithOAuth(...args),
+      signOut: (...args: unknown[]) => mockSignOut(...args),
+      getSession: (...args: unknown[]) => mockGetSession(...args),
     },
   },
 }));
@@ -39,7 +39,7 @@ describe('Login page - user not found', () => {
       status: 404,
       json: async () => ({ error: 'User not found. Please sign up' }),
       text: async () => JSON.stringify({ error: 'User not found. Please sign up' }),
-    } as any);
+    } as Response);
   });
 
   afterAll(() => {

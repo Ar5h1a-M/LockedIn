@@ -17,9 +17,9 @@ const mockGetSession = jest.fn().mockResolvedValue({
 jest.mock('@/lib/supabaseClient', () => ({
   supabase: {
     auth: {
-      signInWithOAuth: (...args: any[]) => mockSignInWithOAuth(...args),
-      signOut: (...args: any[]) => mockSignOut(...args),
-      getSession: (...args: any[]) => mockGetSession(...args),
+      signInWithOAuth: (...args: unknown[]) => mockSignInWithOAuth(...args),
+      signOut: (...args: unknown[]) => mockSignOut(...args),
+      getSession: (...args: unknown[]) => mockGetSession(...args),
     },
   },
 }));
@@ -39,7 +39,7 @@ describe('Login page - success flow', () => {
       status: 200,
       json: async () => ({ ok: true }),
       text: async () => JSON.stringify({ ok: true }),
-    } as any);
+    } as Response);
   });
 
   afterAll(() => {
