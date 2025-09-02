@@ -35,9 +35,13 @@ jest.mock('react-icons/fa', () => ({
 }));
 
 // Mock Next.js Link component
-jest.mock('next/link', () => ({ children, href }: { children: React.ReactNode; href: string }) => (
-  <a href={href}>{children}</a>
-));
+jest.mock('next/link', () => {
+  const Link = ({ children, href }: { children: React.ReactNode; href: string }) => {
+    return <a href={href}>{children}</a>;
+  };
+  Link.displayName = 'NextLink';
+  return Link;
+});
 
 // Mock global alert and fetch
 global.alert = jest.fn();
