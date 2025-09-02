@@ -1,200 +1,202 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import ProgressTracker from './page';
-import { within } from '@testing-library/react';
+ 
+// Progress.tsx
+"use client";
 
-const getWeeklySummary = () => {
-  const heading = screen.getByRole('heading', { name: /Weekly Summary/i });
-  const card = heading.closest('.card') as HTMLElement;
-  return within(card);
-};
+import { useState, useEffect } from "react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import styles from "./page.module.css";
+import { supabase } from "@/lib/supabaseClient";
+import Sidebar from "@/components/Sidebar";
 
-// Mock supabase auth and onAuthStateChange
-const mockGetSession = jest.fn().mockResolvedValue({
-  data: { session: { access_token: 'fake_token' } },
-});
-const mockOnAuthStateChange = jest.fn().mockReturnValue({
-  data: { subscription: { unsubscribe: jest.fn() } },
-});
+type Entry = { date: string; hours: number; productivity: number; notes?: string; };
 
-jest.mock('src/lib/supabaseClient');
+export default function ProgressTracker() {
+  const todayStr = new Date().toISOString().slice(0, 10);
 
+  const [date, setDate] = useState(todayStr);
+  const [hours, setHours] = useState<number | "">("");
+  const [productivity, setProductivity] = useState(3);
+  const [notes, setNotes] = useState("");
+  const [entries, setEntries] = useState<Entry[]>([]);
 
-describe('ProgressTracker page', () => {
-  const OLD_ENV = process.env;
-  let alertSpy: jest.SpyInstance;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    process.env = { ...OLD_ENV, NEXT_PUBLIC_API_URL: 'http://api.local' };
-    // Spy on window.alert
-    alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+  const authHeaders = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  };
+
+useEffect(() => {
+  const fetchData = async () => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+    const headers = await authHeaders();
+    if (!headers) return; // no session yet
+
+    const resp = await fetch(`${API_URL}/api/progress`, { headers });
+    if (resp.ok) {
+      const j = await resp.json();
+      setEntries(j.entries || []);
+    }
+  };
+
+  // call immediately
+  fetchData();
+
+  // also refetch whenever session changes
+  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) fetchData();
   });
 
-  afterAll(() => {
-    process.env = OLD_ENV;
-    alertSpy.mockRestore();
-  });
-
-  it('shows placeholder when no entries have been logged', async () => {
-    // Backend returns no entries
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ entries: [] }),
-    } as Response);
-
-    render(<ProgressTracker />);
-
-    // Verify initial fetch call
-    await waitFor(() =>
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://api.local/api/progress',
-        expect.any(Object)
-      )
-    );
-    // Should display placeholder text and no motivation section
-    expect(
-      screen.getByText(/No study hours logged yet/i)
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Motivation/i)).toBeNull();
-  });
-
-  it('loads and displays entries and a motivational message based on today’s hours', async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    // Prepare one entry for today with >=4 hours to trigger the top motivation message
-    const entries = [
-      { date: today, hours: 4, productivity: 5, notes: 'Did project work' },
-    ];
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ entries }),
-    } as Response);
-
-    render(<ProgressTracker />);
-
-    // Wait for the entry to load into the UI
-    await screen.findByText(today); // date of the entry appears in summary list
-    // Check that the entry details are rendered in the summary list
-    
-    // helper that ignores whitespace/newlines between nodes
-    const hasSummary = (needle: RegExp) =>
-    (_: string, el?: Element | null) => !!el && needle.test(el.textContent || '');
+  return () => sub.subscription.unsubscribe();
+}, []);
 
 
-    const summary = getWeeklySummary();
-    expect(
-    summary.getByText(
-        hasSummary(new RegExp(`\\b${entries[0].hours}\\s*h\\s*\\(Productivity:\\s*${entries[0].productivity}\\s*/5\\)`))
-    )
-    ).toBeInTheDocument();
-
-    expect(screen.getByText(hasSummary(/\(Did project work\)/))).toBeInTheDocument();
-    // Summary totals should reflect the entry
-    expect(
-      screen.getByText(new RegExp(`This week: ${entries[0].hours} hours total`))
-    ).toBeInTheDocument();
-  });
-
-  it('allows logging a new study entry and updates the summary list', async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    // Initial load: no entries, then on log: returns new entry
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          entry: { date: today, hours: 2.5, productivity: 4, notes: 'some note' },
-        }),
-      } as Response);
-
-    render(<ProgressTracker />);
-
-    // Ensure initial state has no entries
-    await waitFor(() =>
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://api.local/api/progress',
-        expect.any(Object)
-      )
-    );
-    // helper that ignores whitespace/newlines between nodes
-    const hasSummary = (needle: RegExp) =>
-    (_: string, el?: Element | null) => !!el && needle.test(el.textContent || '');
-    
-    const summary = getWeeklySummary();
-    await summary.findByText(hasSummary(/2\.5\s*h\s*\(Productivity:\s*4\s*\/5\)/));
-    expect(summary.getByText(hasSummary(/\(some note\)/))).toBeInTheDocument();
-
-
-    // Fill out the log form fields
-    const hoursInput = screen.getByPlaceholderText(/Hours studied/i) as HTMLInputElement;
-    const notesInput = screen.getByPlaceholderText(/Optional notes/i) as HTMLInputElement;
-    // (Date is preset to today by default; we leave it as is)
-    await userEvent.type(hoursInput, '2.5');
-    await userEvent.type(notesInput, 'some note');
-    // Click "Log Hours"
-    const logButton = screen.getByRole('button', { name: /Log Hours/i });
-    await userEvent.click(logButton);
-
-    // The component should call the POST API with the form data
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://api.local/api/progress',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            Authorization: expect.stringMatching(/^Bearer /),
-          }),
-          body: expect.stringContaining(`"hours":2.5`), // ensure hours value is sent as number
-        })
-      );
+  const handleLogHours = async () => {
+    if (!hours && hours !== 0) return;
+    const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+    const resp = await fetch(`${API_URL}/api/progress`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ date, hours: Number(hours), productivity, notes }),
     });
-    // After saving, the new entry should be added to the list with correct details
-    expect(screen.getByText(`${2.5}h (Productivity: 4/5)`)).toBeInTheDocument();
-    expect(screen.getByText('(some note)')).toBeInTheDocument();
-    // Motivation message should update for today's hours (2.5h triggers "Great job!")
-    expect(
-      screen.getByText(/Great job! Keep the momentum going!/i)
-    ).toBeInTheDocument();
-    // The input fields should be cleared/reset
-    expect(hoursInput.value).toBe('');
-    expect(notesInput.value).toBe('');
-    // Productivity slider resets to 3 (default)
-    expect(screen.getByText(/Productivity: 3\/5/)).toBeInTheDocument();
-  });
+    const j = await resp.json();
+    if (!resp.ok) return alert(j?.error || "Failed to save");
 
-  it('shows an error alert if saving a log entry fails', async () => {
-    // Initial fetch ok, save attempt returns error
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'Failed to save entry' }),
-      } as Response);
+    const existingIndex = entries.findIndex(e => e.date === date);
+    const newEntry = j.entry as Entry;
+    let updated = [...entries];
+    if (existingIndex >= 0) updated[existingIndex] = newEntry;
+    else updated = [newEntry, ...entries].slice(0, 7);
+    setEntries(updated);
 
-    render(<ProgressTracker />);
+    setHours("");
+    setNotes("");
+    setProductivity(3);
+  };
 
-    await waitFor(() => expect(global.fetch).toHaveBeenCalled()); // initial load
-    // Fill required field (hours)
-    const hoursInput = screen.getByPlaceholderText(/Hours studied/i);
-    await userEvent.type(hoursInput, '1');
-    // Click log hours to trigger failing save
-    await userEvent.click(screen.getByRole('button', { name: /Log Hours/i }));
+  // … (the rest of your render unchanged)
 
-    // Expect an alert with the error message
-    await waitFor(() =>
-      expect(alertSpy).toHaveBeenCalledWith('Failed to save entry')
-    );
-    // Ensure the hours entry was not added (still showing placeholder)
-    expect(screen.getByText(/No study hours logged yet/i)).toBeInTheDocument();
-  });
-});
+
+
+  const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
+  const avgHours = entries.length ? (totalHours / entries.length).toFixed(1) : 0;
+
+  // Dynamic motivational message based on today's hours
+  const todayEntry = entries.find(e => e.date === date);
+  let motivationMessage = "Start logging your study hours today!";
+  if (todayEntry) {
+    if (todayEntry.hours >= 4) motivationMessage = "Amazing work! Super productive today! 🎉";
+    else if (todayEntry.hours >= 2) motivationMessage = "Great job! Keep the momentum going! 💪";
+    else if (todayEntry.hours > 0) motivationMessage = "Good start! Every hour counts! 👍";
+  }
+
+  return (
+    <div className="dashboardLayout">
+                <Sidebar />
+        <main className="dashboardContent ">
+        <div className="dashboard-wrapper">
+    {/* <main className={styles.container}> */}
+      <header className={styles.header}>
+        <h1>Progress Tracker</h1>
+        <p>Log your study hours and track your progress over time.</p>
+      </header>
+
+      <section className={styles.grid}>
+        {/* Left Column: Log + Motivation */}
+        <div className={styles.leftColumn}>
+          <div className={styles.card}>
+            <h2>Log Study Hours</h2>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder="Hours studied"
+              value={hours}
+              onChange={e => setHours(e.target.value ? Number(e.target.value) : "")}
+            />
+            <label>
+              Productivity: {productivity}/5
+              <input
+                type="range"
+                min="0"
+                max="5"
+                value={productivity}
+                onChange={e => setProductivity(Number(e.target.value))}
+              />
+            </label>
+            <input
+              type="text"
+              placeholder="Optional notes"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+            />
+            <button onClick={handleLogHours}>Log Hours</button>
+          </div>
+
+          {entries.length > 0 && (
+            <div className={styles.card}>
+              <h2>Motivation</h2>
+              <p className={styles.motivation}>{motivationMessage}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Summary + Chart */}
+        <div className={styles.rightColumn}>
+          <div className={styles.card}>
+            <h2>Weekly Summary</h2>
+            {entries.length === 0 ? (
+              <p className={styles.placeholder}>
+                No study hours logged yet. Start by adding today’s hours!
+              </p>
+            ) : (
+              <>
+                <ul className={styles.summaryList}>
+                  {entries.map(entry => (
+                    <li key={entry.date}>
+                      <strong>{entry.date}</strong> → {entry.hours}h (Productivity: {entry.productivity}/5)
+                      {entry.notes ? ` (${entry.notes})` : ""}
+                    </li>
+                  ))}
+                </ul>
+
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart
+                    data={[...entries].reverse()}
+                    margin={{ top: 10, bottom: 10 }}
+                  >
+                    <defs>
+                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#007acc" stopOpacity={0.9} />
+                        <stop offset="100%" stopColor="#00d4ff" stopOpacity={0.6} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar
+                      dataKey="hours"
+                      fill="url(#grad)"
+                      radius={[6, 6, 0, 0]}
+                      barSize={30}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+
+                <p className={styles.total}>
+                  This week: {totalHours} hours total, avg {avgHours}h/day
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+      </div>
+    </main>
+    </div>
+  );
+}
+
+
