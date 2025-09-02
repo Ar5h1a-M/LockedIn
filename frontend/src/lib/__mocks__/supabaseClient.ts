@@ -1,10 +1,13 @@
-// Lightweight jest mock for supabase client used in pages during tests
 export const supabase = {
   auth: {
     getSession: jest.fn().mockResolvedValue({
-      data: { session: { user: { id: 'user1', email: 'me@example.com' } } },
+      data: { session: { user: { id: 'user1', email: 'me@example.com' }, access_token: 'fake' } },
       error: null,
     }),
+    // ADD THIS:
+    onAuthStateChange: jest.fn((_cb) => ({
+      data: { subscription: { unsubscribe: jest.fn() } },
+    })),
   },
   from: jest.fn(() => ({
     select: jest.fn().mockReturnThis(),
