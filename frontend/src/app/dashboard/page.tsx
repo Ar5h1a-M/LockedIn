@@ -1,8 +1,6 @@
-// src/app/dashboard/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -11,113 +9,130 @@ type Session = {
   id: string;
   group_id: string;
   creator_id: string;
-  start_at: string;          // ISO
+  start_at: string;
   venue: string | null;
   topic: string | null;
   time_goal_minutes: number | null;
   content_goal: string | null;
 };
+type Test = { id: string; name: string; scope?: string; test_date: string };
+type Friend = { id: string; full_name: string; email: string; degree?: string|null; };
 
 export default function DashboardPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  const [studyTime] = useState({
-    today: "2h 15m",
-    week: "10h 40m",
-    weekend: "4h 20m",
-    month: "38h 10m",
-  });
-
-  const [upcomingTests] = useState([
-    { subject: "Math", date: "2025-08-18" },
-    { subject: "History", date: "2025-08-22" },
-  ]);
-
-  // --- NEW: groups & sessions pulled from API ---
+  const [studyTime, setStudyTime] = useState<any | null>(null);
+  const [upcomingTests, setUpcomingTests] = useState<Test[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [newTestName, setNewTestName] = useState("");
+  const [newTestDate, setNewTestDate] = useState("");
+  const [newTestScope, setNewTestScope] = useState("");
 
-  // simple friends placeholder
-  const [friends] = useState(["Alice", "Bob", "Charlie"]);
-
-  // Helper to attach auth header
   const authHeaders = async () => {
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : undefined;
   };
 
-  // Load groups (or fallback to localStorage if you don’t have an endpoint)
+  // --- Loaders ---
+  const loadStudyTime = async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/study-time`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setStudyTime(data);
+      }
+    } catch (err) {
+      console.error("Study time error:", err);
+      setStudyTime({});
+    }
+  };
+
+  const loadTests = async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/upcoming`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setUpcomingTests(data.tests || []);
+      }
+    } catch (err) {
+      console.error("Load tests error:", err);
+    }
+  };
+
   const loadGroups = async () => {
     try {
       const headers = await authHeaders();
-      // If you DON'T have /api/my/groups, comment the fetch below,
-      // and use the localStorage fallback afterwards.
-      const r = await fetch(`${API_URL}/api/my/groups`, { headers });
-      if (r.ok) {
-        const j = await r.json();
-        const list: Group[] = j.groups || [];
-        setGroups(list);
-        if (!selectedGroupId) {
-          const stored = typeof window !== "undefined" ? localStorage.getItem("currentGroupId") : null;
-          setSelectedGroupId(stored || (list[0]?.id ?? null));
-        }
-        return;
-      }
-    } catch {
-      /* ignore and try fallback */
-    }
-
-    // Fallback: if you store a current group id elsewhere in the app
-    const stored = typeof window !== "undefined" ? localStorage.getItem("currentGroupId") : null;
-    if (stored) {
-      setGroups([{ id: stored, name: "Current Group" }]);
-      if (!selectedGroupId) setSelectedGroupId(stored);
+      const res = await fetch(`${API_URL}/api/groups`, { headers });
+      const data = await res.json();
+      const list: Group[] = data.groups || [];
+      setGroups(list);
+      if (!selectedGroupId && list[0]) setSelectedGroupId(list[0].id);
+    } catch (err) {
+      console.error("Load groups error:", err);
     }
   };
 
-  const loadSessions = async (gid: string) => {
-    setLoadingSessions(true);
+  const loadSessions = async (groupId: string) => {
     try {
       const headers = await authHeaders();
-      const r = await fetch(`${API_URL}/api/groups/${gid}/sessions`, { headers });
-      const j = await r.json();
-      const list: Session[] = j.sessions || [];
-      // Sort by soonest start time & keep next 8
-      list.sort(
-        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-      );
-      setSessions(list.slice(0, 8));
-    } catch {
-      setSessions([]);
-    } finally {
-      setLoadingSessions(false);
+      const res = await fetch(`${API_URL}/api/groups/${groupId}/sessions`, { headers });
+      const data = await res.json();
+      const list: Session[] = data.sessions || [];
+      list.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+      setSessions(list.slice(0, 1));
+    } catch (err) {
+      console.error("Load sessions error:", err);
+    }
+  };
+
+  const loadFriends = async () => {
+    const headers = await authHeaders();
+    const r = await fetch(`${API_URL}/api/friends`, { headers });
+    const j = await r.json();
+    setFriends(j.friends || []);
+  };
+  // --- Add Test ---
+  const handleAddTest = async () => {
+    if (!newTestName || !newTestDate) return;
+    try {
+      const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+      const res = await fetch(`${API_URL}/api/assessments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: newTestName, test_date: newTestDate, scope: newTestScope }),
+      });
+      if (res.ok) {
+        setShowTestModal(false);
+        setNewTestName("");
+        setNewTestDate("");
+        setNewTestScope("");
+        await loadTests();
+      } else {
+        const err = await res.json();
+        console.error("Add test failed:", err);
+      }
+    } catch (err) {
+      console.error("Add test error:", err);
     }
   };
 
   useEffect(() => {
+    loadStudyTime();
+    loadTests();
     loadGroups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadFriends();
   }, []);
 
   useEffect(() => {
-    if (selectedGroupId) {
-      // keep selection in localStorage so dashboard remembers
-      if (typeof window !== "undefined") {
-        localStorage.setItem("currentGroupId", selectedGroupId);
-      }
-      loadSessions(selectedGroupId);
-    } else {
-      setSessions([]);
-    }
+    if (selectedGroupId) loadSessions(selectedGroupId);
   }, [selectedGroupId]);
-
-  const selectedGroup = useMemo(
-    () => groups.find(g => g.id === selectedGroupId) || null,
-    [groups, selectedGroupId]
-  );
 
   return (
     <div className="dashboardLayout">
@@ -128,25 +143,32 @@ export default function DashboardPage() {
         {/* Study Time */}
         <section className="dashboard-section">
           <h2>Study Time</h2>
-          <div className="study-time-grid">
-            {Object.entries(studyTime).map(([label, value]) => (
-              <div key={label} className="card">
-                <span className="label">{label.toUpperCase()}</span>
-                <span className="value">{value}</span>
-              </div>
-            ))}
-          </div>
+          {studyTime && Object.keys(studyTime).length ? (
+            <div className="study-time-grid">
+              {Object.entries(studyTime).map(([label, value]) => (
+                <div key={label} className="card">
+                  <span className="label">{label.toUpperCase()}</span>
+                  <span className="value">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>Loading…</p>
+          )}
         </section>
 
         {/* Upcoming Tests */}
         <section className="dashboard-section">
-          <h2>Upcoming Tests</h2>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <h2>Upcoming Tests</h2>
+            <button onClick={() => setShowTestModal(true)}>➕ Add Test</button>
+          </div>
           {upcomingTests.length ? (
             <ul className="list">
-              {upcomingTests.map((test, i) => (
-                <li key={i} className="list-item">
-                  <span>{test.subject}</span>
-                  <span className="date">{test.date}</span>
+              {upcomingTests.map((t) => (
+                <li key={t.id} className="list-item">
+                  <span>{t.name}</span>
+                  <span className="date">{new Date(t.test_date).toLocaleDateString()}</span>
                 </li>
               ))}
             </ul>
@@ -155,65 +177,52 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* NEW: Upcoming Study Sessions from selected group */}
-        <section className="dashboard-section">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-            <h2>Upcoming Study Sessions</h2>
-
-            {/* Group selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label htmlFor="groupSelect" style={{ fontSize: 14 }}>Group:</label>
-              <select
-                id="groupSelect"
-                value={selectedGroupId ?? ""}
-                onChange={(e) => setSelectedGroupId(e.target.value || null)}
-                style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e5e7eb" }}
-              >
-                {groups.length === 0 && <option value="">—</option>}
-                {groups.map(g => (
-                  <option key={g.id} value={g.id}>
-                    {g.name || g.id}
-                  </option>
-                ))}
-              </select>
-              {selectedGroupId && (
-                <Link
-                  href={`/sessions/${selectedGroupId}`}
-                  className="link"
-                  style={{ fontSize: 14, textDecoration: "underline" }}
-                >
-                  Open sessions →
-                </Link>
-              )}
+        {/* Add Test Modal */}
+        {showTestModal && (
+          <div className="modal-overlay">
+            <div className="modal-card">
+              <h3>Add Test</h3>
+              <input
+                type="text"
+                placeholder="Test Name"
+                value={newTestName}
+                onChange={(e) => setNewTestName(e.target.value)}
+              />
+              <input
+                type="date"
+                placeholder="Test Date"
+                value={newTestDate}
+                onChange={(e) => setNewTestDate(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Scope"
+                value={newTestScope}
+                onChange={(e) => setNewTestScope(e.target.value)}
+              />
+              <div style={{ marginTop: 12 }}>
+                <button onClick={handleAddTest}>Add</button>
+                <button onClick={() => setShowTestModal(false)}>Cancel</button>
+              </div>
             </div>
           </div>
+        )}
 
-          {!selectedGroupId ? (
-            <p>Select a group to view sessions.</p>
-          ) : loadingSessions ? (
-            <p>Loading sessions…</p>
-          ) : sessions.length ? (
-            <ul className="list">
-              {sessions.map((s) => {
-                const dt = new Date(s.start_at);
-                const when = `${dt.toLocaleDateString()} at ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-                return (
-                  <li key={s.id} className="list-item">
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontWeight: 600 }}>
-                        {s.topic || "Study session"}
-                      </span>
-                      <span className="date">{when}</span>
-                      <span style={{ fontSize: 12, color: "#64748b" }}>
-                        Venue: {s.venue || "—"} · Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+        {/* Study Sessions */}
+        <section className="dashboard-section">
+          <h2>Upcoming Study Session</h2>
+          {!sessions.length ? (
+            <p>No sessions yet.</p>
           ) : (
-            <p>No upcoming study sessions 📚</p>
+            <ul className="list">
+              {sessions.map((s) => (
+                <li key={s.id} className="list-item">
+                  <strong>{s.topic || "Study session"}</strong>
+                  <div>{new Date(s.start_at).toLocaleString()}</div>
+                  <div>Venue: {s.venue || "—"}</div>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
@@ -221,18 +230,32 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <h2>Friends</h2>
           {friends.length ? (
-            <ul className="friends-list">
-              {friends.map((friend, i) => (
-                <li key={i} className="friend-item">
-                  {friend}
+             <ul className="friends-list" >
+              {friends.map((f) => (
+                <li
+                  key={f.id}
+                  className="friend-item"
+                  style={{
+                    // display: "flex",
+                    alignItems: "center",
+                    background: "#007acc",
+                    color: "#fff",
+                    // padding: "4px 8px",
+                    // borderRadius: "6px",
+                  }}
+                >
+                  {f.full_name || "Unknown"}
                 </li>
               ))}
+
             </ul>
+
           ) : (
             <p>No friends yet 😢</p>
           )}
         </section>
       </main>
+
     </div>
   );
 }
