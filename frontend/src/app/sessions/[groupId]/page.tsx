@@ -1,8 +1,6 @@
-// app/sessions/[groupId]/page.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Sidebar from "@/components/Sidebar";
 
@@ -22,7 +20,7 @@ type ChatMessage = {
   group_id: string;
   session_id: string | null;
   sender_id: string;
-  sender_name?: string | null; // NEW
+  sender_name?: string | null;
   content: string | null;
   attachment_url: string | null;
   created_at: string;
@@ -30,12 +28,16 @@ type ChatMessage = {
 
 type RSVPStatus = "accepted" | "declined" | "none";
 
-export default function GroupSessionsPage() {
+type PageProps = {
+  params: { groupId: string };
+};
+
+export default function GroupSessionsPage({ params }: PageProps) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const { groupId } = useParams<{ groupId: string }>();
+  const { groupId } = params;
 
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [startAt, setStartAt] = useState<string>(""); // yyyy-mm-ddThh:mm (local)
+  const [startAt, setStartAt] = useState<string>("");
   const [venue, setVenue] = useState("");
   const [topic, setTopic] = useState("");
   const [timeGoal, setTimeGoal] = useState<number | "">("");
@@ -49,7 +51,7 @@ export default function GroupSessionsPage() {
 
   const [me, setMe] = useState<string | null>(null);
 
-  // NEW: conflict + availability state
+  // conflict + availability state
   const [myAccepted, setMyAccepted] = useState<Session[]>([]);
   const [conflictBanner, setConflictBanner] = useState<string | null>(null);
   const [unavailablePeople, setUnavailablePeople] = useState<string[]>([]);
@@ -89,8 +91,8 @@ export default function GroupSessionsPage() {
     const r = await fetch(`${API_URL}/api/groups/${groupId}/messages?limit=200`, { headers });
     const j = await r.json();
     setMessages(j.messages || []);
-    // auto-scroll to bottom
-    setTimeout(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }), 0);
+    // auto-scroll to bottom (SAFE CALL)
+    setTimeout(() => listRef.current?.scrollTo?.({ top: listRef.current!.scrollHeight }), 0);
   };
 
   const loadMyAccepted = async () => {
@@ -112,7 +114,7 @@ export default function GroupSessionsPage() {
 
     // self-conflict banner
     for (const s of list) {
-      const hasMine = myAccepted.some(m =>
+      const hasMine = myAccepted.some((m) =>
         overlaps(sessionStart(s), sessionEnd(s), sessionStart(m), sessionEnd(m))
       );
       if (hasMine) {
@@ -146,12 +148,35 @@ export default function GroupSessionsPage() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMe(data.user?.id ?? null));
+    let cancelled = false;
+
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!cancelled) setMe(data?.session?.user?.id ?? null);
+    };
+    init();
+
     loadSessions();
     loadMessages();
     loadMyAccepted();
-    const t = setInterval(loadMessages, 2000);
-    return () => clearInterval(t);
+
+    const poll = setInterval(loadMessages, 2000);
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setMe(session?.user?.id ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      try {
+        // support both real SDK and jest mocks
+        // @ts-ignore
+        sub?.subscription?.unsubscribe?.();
+        // @ts-ignore
+        sub?.unsubscribe?.();
+      } catch {}
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
@@ -163,7 +188,7 @@ export default function GroupSessionsPage() {
     const start = new Date(startAt);
     const end = new Date(startAt);
     end.setMinutes(end.getMinutes() + (typeof timeGoal === "number" ? timeGoal : 60));
-    const iHaveConflict = myAccepted.some(m =>
+    const iHaveConflict = myAccepted.some((m) =>
       overlaps(start, end, sessionStart(m), sessionEnd(m))
     );
     if (iHaveConflict && !confirm("This overlaps one of your accepted sessions. Create anyway?")) {
@@ -184,19 +209,22 @@ export default function GroupSessionsPage() {
     });
     const j = await r.json();
     if (!r.ok) return alert(j?.error || "Failed");
-    setStartAt(""); setVenue(""); setTopic(""); setTimeGoal(""); setContentGoal("");
+    setStartAt("");
+    setVenue("");
+    setTopic("");
+    setTimeGoal("");
+    setContentGoal("");
     await loadSessions();
   };
 
   const handleDeleteSession = async (sessionId: string) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL!;
     const headers = await authHeaders();
     const resp = await fetch(`${API_URL}/api/groups/${groupId}/sessions/${sessionId}`, {
       method: "DELETE",
-      headers
+      headers,
     });
     if (resp.ok) {
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     } else {
       const j = await resp.json();
       alert(j.error || "Failed to delete session");
@@ -227,9 +255,10 @@ export default function GroupSessionsPage() {
       let attachment_url: string | null = null;
 
       if (file) {
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData.user?.id;
+        const { data: userData } = await supabase.auth.getSession();
+        const uid = userData?.session?.user?.id;
         if (!uid) throw new Error("User not authenticated");
+
         const path = `${groupId}/${Date.now()}-${file.name}`;
         const { data, error } = await supabase.storage
           .from("group-uploads")
@@ -245,7 +274,7 @@ export default function GroupSessionsPage() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          session_id: null, // or bind to a selected session id if you add that UI later
+          session_id: null,
           content: message || null,
           attachment_url,
         }),
@@ -255,7 +284,8 @@ export default function GroupSessionsPage() {
       setMessage("");
       setFile(null);
       await loadMessages();
-      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+      // SAFE CALL
+      listRef.current?.scrollTo?.({ top: listRef.current!.scrollHeight, behavior: "smooth" });
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Upload/send failed";
       alert(errorMessage);
@@ -269,80 +299,158 @@ export default function GroupSessionsPage() {
       <Sidebar />
       <main className="dashboardContent ">
         <div className="dashboard-wrapper">
-          <header className="dashboard-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <header
+            className="dashboard-header"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          >
             <h1>📅 Group Sessions</h1>
           </header>
 
           {/* Planner */}
-          <section className="dashboard-section" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+          <section
+            className="dashboard-section"
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+          >
             <div className="card">
               <h2>Plan a Study Session</h2>
               <label>Date & time</label>
-              <input type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)} />
+              <input
+                type="datetime-local"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+              />
               <label>Venue</label>
-              <input value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g., Library Room 3" />
+              <input
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                placeholder="e.g., Library Room 3"
+              />
               <label>What will we study?</label>
-              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g., Linear Algebra Ch. 4" />
+              <input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., Linear Algebra Ch. 4"
+              />
               <label>Study time goal (minutes)</label>
-              <input type="number" min="0" value={timeGoal} onChange={e => setTimeGoal(e.target.value === "" ? "" : Number(e.target.value))} />
+              <input
+                type="number"
+                min="0"
+                value={timeGoal}
+                onChange={(e) =>
+                  setTimeGoal(e.target.value === "" ? "" : Number(e.target.value))
+                }
+              />
               <label>Content goal</label>
-              <input value={contentGoal} onChange={e => setContentGoal(e.target.value)} placeholder="e.g., Finish problem set Q1–Q5" />
+              <input
+                value={contentGoal}
+                onChange={(e) => setContentGoal(e.target.value)}
+                placeholder="e.g., Finish problem set Q1–Q5"
+              />
               <button onClick={createSession}>Create session</button>
             </div>
 
             <div className="card">
               <h2>Upcoming Sessions</h2>
 
-              {/* NEW: conflict + availability banners */}
               {conflictBanner && (
-                <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" }}>
+                <div
+                  style={{
+                    marginBottom: 8,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #fecaca",
+                  }}
+                >
                   {conflictBanner}
                 </div>
               )}
               {!!unavailablePeople.length && (
-                <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#fff7ed", color: "#9a3412", border: "1px solid #fed7aa" }}>
-                  Some people aren’t available for the next session: {unavailablePeople.join(", ")}
+                <div
+                  style={{
+                    marginBottom: 8,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    background: "#fff7ed",
+                    color: "#9a3412",
+                    border: "1px solid #fed7aa",
+                  }}
+                >
+                  Some people aren’t available for the next session:{" "}
+                  {unavailablePeople.join(", ")}
                 </div>
               )}
 
-              {!sessions.length ? <p>No sessions yet.</p> : (
+              {!sessions.length ? (
+                <p>No sessions yet.</p>
+              ) : (
                 <ul className="list" style={{ maxHeight: 260, overflow: "auto" }}>
-                  {sessions.map(s => {
+                  {sessions.map((s) => {
                     const sStart = sessionStart(s);
                     const sEnd = sessionEnd(s);
-                    const iHaveConflict = myAccepted.some(m =>
+                    const iHaveConflict = myAccepted.some((m) =>
                       overlaps(sStart, sEnd, sessionStart(m), sessionEnd(m))
                     );
 
                     return (
-                      <li key={s.id} className="list-item" style={{ display:"grid", gap:6 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <li key={s.id} className="list-item" style={{ display: "grid", gap: 6 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
                           <strong>{sStart.toLocaleString()}</strong>
                           {iHaveConflict && (
-                            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background:"#fee2e2", color:"#991b1b", border:"1px solid #fecaca" }}>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: "#fee2e2",
+                                color: "#991b1b",
+                                border: "1px solid #fecaca",
+                              }}
+                            >
                               Conflicts with your schedule
                             </span>
                           )}
                         </div>
-                        <div><small>Venue: {s.venue || "—"}</small></div>
-                        <div><small>Topic: {s.topic || "—"}</small></div>
-                        <div><small>Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}</small></div>
-                        <div><small>Content goal: {s.content_goal || "—"}</small></div>
+                        <div>
+                          <small>Venue: {s.venue || "—"}</small>
+                        </div>
+                        <div>
+                          <small>Topic: {s.topic || "—"}</small>
+                        </div>
+                        <div>
+                          <small>
+                            Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}
+                          </small>
+                        </div>
+                        <div>
+                          <small>Content goal: {s.content_goal || "—"}</small>
+                        </div>
 
                         {/* RSVP + Delete */}
-                        <div style={{ display:"flex", gap:8, marginTop:6 }}>
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                           <button
                             onClick={() => {
-                              if (iHaveConflict && !confirm("This overlaps an accepted session. Accept anyway?")) return;
+                              if (
+                                iHaveConflict &&
+                                !confirm("This overlaps an accepted session. Accept anyway?")
+                              )
+                                return;
                               rsvpSession(s.id, "accepted");
                             }}
-                            style={{ padding:"6px 10px" }}
+                            style={{ padding: "6px 10px" }}
                           >
                             ✅ Accept
                           </button>
                           <button
                             onClick={() => rsvpSession(s.id, "declined")}
-                            style={{ padding:"6px 10px" }}
+                            style={{ padding: "6px 10px" }}
                           >
                             ❌ Decline
                           </button>
@@ -366,7 +474,10 @@ export default function GroupSessionsPage() {
           </section>
 
           {/* Chat */}
-          <section className="dashboard-section" style={{ marginTop:16, display:"grid", gridTemplateColumns:"1fr", gap:16 }}>
+          <section
+            className="dashboard-section"
+            style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr", gap: 16 }}
+          >
             <div className="card">
               <h2>Group Chat</h2>
               <div
@@ -376,42 +487,58 @@ export default function GroupSessionsPage() {
                   border: "1px solid #eee",
                   borderRadius: 8,
                   padding: 12,
-                  background:"#f8fafc"
+                  background: "#f8fafc",
                 }}
               >
-                {messages.map(m => {
+                {messages.map((m) => {
                   const mine = m.sender_id === me;
                   return (
                     <div
                       key={m.id}
                       style={{
-                        display:"flex",
+                        display: "flex",
                         justifyContent: mine ? "flex-end" : "flex-start",
-                        marginBottom: 10
+                        marginBottom: 10,
                       }}
                     >
                       <div
                         style={{
                           maxWidth: "75%",
-                          background: mine ? "#DCF8C6" : "#ffffff", // WA vibe
+                          background: mine ? "#DCF8C6" : "#ffffff",
                           border: "1px solid #e5e7eb",
                           borderRadius: 12,
                           padding: "8px 10px",
-                          boxShadow: "0 1px 2px rgba(0,0,0,.06)"
+                          boxShadow: "0 1px 2px rgba(0,0,0,.06)",
                         }}
                       >
                         {!mine && (
-                          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color:"#475569" }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              marginBottom: 4,
+                              color: "#475569",
+                            }}
+                          >
                             {m.sender_name || "Unknown"}
                           </div>
                         )}
-                        {m.content && <div style={{ whiteSpace:"pre-wrap" }}>{m.content}</div>}
+                        {m.content && <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>}
                         {m.attachment_url && (
                           <div style={{ marginTop: 6 }}>
-                            <a href={m.attachment_url} target="_blank" rel="noreferrer">📎 Attachment</a>
+                            <a href={m.attachment_url} target="_blank" rel="noreferrer">
+                              📎 Attachment
+                            </a>
                           </div>
                         )}
-                        <div style={{ fontSize: 11, textAlign:"right", color:"#64748b", marginTop: 4 }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            textAlign: "right",
+                            color: "#64748b",
+                            marginTop: 4,
+                          }}
+                        >
                           {new Date(m.created_at).toLocaleString()}
                         </div>
                       </div>
@@ -420,11 +547,18 @@ export default function GroupSessionsPage() {
                 })}
               </div>
 
-              <div style={{ gap:8, marginTop:8, alignItems:"flex-end" }}>
+              <div style={{ gap: 8, marginTop: 8, alignItems: "flex-end" }}>
                 <textarea
-                  style={{ flex:1, minHeight: 90, resize: "vertical", padding: 10, borderRadius:8, border:"1px solid #e5e7eb" }}
+                  style={{
+                    flex: 1,
+                    minHeight: 90,
+                    resize: "vertical",
+                    padding: 10,
+                    borderRadius: 8,
+                    border: "1px solid #e5e7eb",
+                  }}
                   value={message}
-                  onChange={e => setMessage(e.target.value)}
+                  onChange={(e) => setMessage(e.target.value)}
                   placeholder="Write a message… (Shift+Enter for newline)"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
@@ -433,7 +567,7 @@ export default function GroupSessionsPage() {
                     }
                   }}
                 />
-                <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} />
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                 <button onClick={sendMessage} disabled={sending}>
                   {sending ? "Sending…" : "Send"}
                 </button>
