@@ -36,7 +36,7 @@ describe("Sessions chat branches", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as any).fetch = fetchMock;
+    global.fetch = fetchMock as typeof fetch;
 
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

@@ -21,7 +21,7 @@ type Friend = { id: string; full_name: string; email: string; degree?: string|nu
 export default function DashboardPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  const [studyTime, setStudyTime] = useState<any | null>(null);
+  const [studyTime, setStudyTime] = useState<Record<string, unknown> | null>(null);
   const [upcomingTests, setUpcomingTests] = useState<Test[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);

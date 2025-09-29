@@ -23,10 +23,10 @@ jest.mock("@/lib/supabaseClient", () => ({
 
 // Mock recharts completely to prevent SVG rendering issues
 jest.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: any) => (
+  ResponsiveContainer: ({ children }:{ children: React.ReactNode }) => (
     <div data-testid="mock-responsive-container">{children}</div>
   ),
-  BarChart: ({ children }: any) => (
+  BarChart: ({ children }:{ children: React.ReactNode }) => (
     <div data-testid="mock-bar-chart">{children}</div>
   ),
   Bar: () => null,
@@ -69,7 +69,7 @@ describe("Progress Tracker – extra branches", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as any).fetch = fetchMock;
+    global.fetch = fetchMock as typeof fetch;
 
     // Set environment variables
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3001";

@@ -27,7 +27,7 @@ export async function GET() {
 
     const data = await resp.json();
     return NextResponse.json(data);
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
       { error: "Failed to fetch F1 races" },
       { status: 500 }

@@ -21,14 +21,13 @@ describe("authFetch", () => {
       data: { session: { access_token: "abc" } },
     });
     const globalFetch = jest
-      .spyOn(global as any, "fetch")
-      .mockResolvedValue({ ok: true } as any);
-
-    await authFetch("/api/x", { method: "POST", body: JSON.stringify({}) });
-
-    expect(globalFetch).toHaveBeenCalled();
-    const [, init] = (globalFetch as any).mock.calls[0];
-    expect(init.headers.Authorization).toBe("Bearer abc");
-    globalFetch.mockRestore();
+  .spyOn(global as typeof globalThis, "fetch")
+  .mockResolvedValue({ ok: true } as Response);
+await authFetch("/api/x", { method: "POST", body: JSON.stringify({}) });
+expect(globalFetch).toHaveBeenCalled();
+const [, init] = globalFetch.mock.calls[0];
+const headers = init?.headers as Record<string, string>;
+expect(headers?.Authorization).toBe("Bearer abc");
+globalFetch.mockRestore();
   });
 });

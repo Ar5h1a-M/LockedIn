@@ -21,7 +21,7 @@ describe("Login network error branch", () => {
   const fetchMock = jest.fn();
 
   beforeEach(() => {
-    (global as any).fetch = fetchMock;
+    global.fetch = fetchMock as typeof fetch;
     // throw on backend verify call
     fetchMock.mockImplementation(() => {
       throw new Error("boom");

@@ -29,8 +29,8 @@ describe("Sessions failure branches", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (window as any).alert = jest.fn();
-    (global as any).fetch = fetchMock;
+    (window as Window & typeof globalThis).alert = jest.fn();
+    global.fetch = fetchMock as typeof fetch;
 
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

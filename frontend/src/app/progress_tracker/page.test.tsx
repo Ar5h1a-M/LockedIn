@@ -35,7 +35,7 @@ describe("Progress Tracker", () => {
     jest.clearAllMocks();
     // @ts-ignore
     window.alert = jest.fn();
-    (global as any).fetch = fetchMock;
+   global.fetch = fetchMock as typeof fetch;
 
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

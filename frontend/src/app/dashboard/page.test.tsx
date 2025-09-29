@@ -14,7 +14,7 @@ jest.mock("@/lib/supabaseClient", () => ({
 
 // Mock fetch for groups/sessions/progress endpoints used internally
 const fetchMock = jest.fn();
-global.fetch = fetchMock as any;
+global.fetch = fetchMock as typeof fetch;
 
 beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue({

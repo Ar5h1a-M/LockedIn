@@ -15,7 +15,7 @@ jest.mock("@/lib/supabaseClient", () => ({
 }));
 
 const fetchMock = jest.fn();
-(global as any).fetch = fetchMock;
+global.fetch = fetchMock as typeof fetch;
 
 beforeEach(() => {
   fetchMock

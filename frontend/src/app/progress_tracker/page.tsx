@@ -150,6 +150,7 @@ export default function ProgressTracker() {
     const val = Number(raw);
     if (Number.isNaN(val)) {
       // represent invalid user input -> triggers proper error message
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setHours(NaN as any);
       return;
     }
@@ -173,7 +174,12 @@ export default function ProgressTracker() {
         body: JSON.stringify({ date, hours: numericHours, productivity, notes }),
       });
 
-      let j: any = null;
+      interface SaveResponse {
+  error?: string;
+  entry?: Entry;
+}
+
+let j: SaveResponse | null = null;
       try {
         j = await resp.json();
       } catch {
