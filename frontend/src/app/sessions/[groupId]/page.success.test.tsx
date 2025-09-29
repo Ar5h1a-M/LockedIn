@@ -1,7 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Page from "./page";
-import { GroupSessionsPageContent } from './page';
+
+import { use } from 'react';
+
+// Mock the use hook
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  use: jest.fn(),
+}));
 
 jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({ groupId: "g1" })),
@@ -86,7 +93,8 @@ describe("Sessions success branches", () => {
   });
 
   it("accepts RSVP successfully and refreshes", async () => {
-    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
+     (use as jest.Mock).mockReturnValue({ groupId: 'g1' });
+    render(<Page params={Promise.resolve({ groupId: 'g1' })} />);
 
     // Wait until the Upcoming Sessions card shows up (list is loaded)
     await screen.findByRole("heading", { level: 2, name: /upcoming sessions/i });
@@ -109,7 +117,8 @@ describe("Sessions success branches", () => {
   });
 
   it("deletes a session successfully and removes it from the list", async () => {
-    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
+     (use as jest.Mock).mockReturnValue({ groupId: 'g1' });
+    render(<Page params={Promise.resolve({ groupId: 'g1' })} />);
 
     await screen.findByRole("heading", { level: 2, name: /upcoming sessions/i });
 

@@ -29,12 +29,13 @@ type ChatMessage = {
 type RSVPStatus = "accepted" | "declined" | "none";
 
 type PageProps = {
-  params: { groupId: string };
+  params: Promise<{ groupId: string }>;
 };
 
-export function GroupSessionsPageContent({ params }: PageProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const { groupId } = params;
+export default function GroupSessionsPage({ params }: PageProps) {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+    const resolvedParams = use(params);
+    const { groupId } = resolvedParams;
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [startAt, setStartAt] = useState<string>("");
@@ -576,13 +577,6 @@ export function GroupSessionsPageContent({ params }: PageProps) {
           </section>
         </div>
       </main>
-      Group ID: {params.groupId}
     </div>
   );
-}
-
-// Default export that handles the async params
-export default function GroupSessionsPage({ params }: { params: Promise<{ groupId: string }> }) {
-  const resolvedParams = use(params);
-  return <GroupSessionsPageContent params={resolvedParams} />;
 }

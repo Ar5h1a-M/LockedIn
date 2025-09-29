@@ -1,7 +1,14 @@
 // src/app/sessions/[groupId]/page.test.tsx
 import { render, screen, waitFor } from "@testing-library/react";
 import Page from "./page";
-import { GroupSessionsPageContent } from './page';
+import { use } from 'react';
+
+// Mock the use hook
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  use: jest.fn(),
+}));
+
 // Only mock what this page actually uses
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/sessions/g1"),
@@ -78,8 +85,8 @@ describe("Sessions/[groupId] page", () => {
   });
 
   it("renders and loads sessions for the group", async () => {
-    // ✅ Pass the required params prop
-    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
+     (use as jest.Mock).mockReturnValue({ groupId: 'g1' });
+    render(<Page params={Promise.resolve({ groupId: 'g1' })} />);
 
     // H1 header (level 1 avoids the “multiple headings with /sessions/” issue)
     expect(
