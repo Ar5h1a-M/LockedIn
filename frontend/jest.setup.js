@@ -1,4 +1,4 @@
-// --- Minimal, robust polyfills first ---
+// --- Minimal, robust polyfills first --- 
 // For libs that expect these in Node test env:
 const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;
@@ -45,6 +45,8 @@ const suppressed = [
   'Error loading data',
   'MSAL initialization error',
   'Error during registration',
+  // ADDED: jsdom "alert" not implemented noise
+  'Not implemented: window.alert',
 ];
 
 const shouldSuppress = (args) => {
@@ -57,6 +59,20 @@ beforeAll(() => {
   console.error = jest.fn((...args) => { if (!shouldSuppress(args)) originalError(...args); });
   console.log = jest.fn((...args) => { if (!shouldSuppress(args)) originalLog(...args); });
   console.warn = jest.fn((...args) => { if (!shouldSuppress(args)) originalWarn(...args); });
+
+  // ADDED: jsdom doesn't implement element.scrollTo; make it a no-op so calls don't crash.
+  if (!Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'scrollTo')) {
+    Object.defineProperty(window.HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: function scrollTo() {},
+    });
+  }
+
+  // ADDED: stub window.alert so components can call it without jsdom throwing
+  if (!window.alert) {
+    window.alert = jest.fn();
+  }
 });
 
 afterAll(() => {
@@ -71,6 +87,7 @@ global.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 };
+
 // Polyfill BroadcastChannel (needed by msw/ws in tests)
 if (typeof global.BroadcastChannel === "undefined") {
   class DummyBroadcastChannel {
@@ -102,3 +119,15 @@ afterEach(() => {
   jest.clearAllMocks();
   try { jest.clearAllTimers(); } catch {}
 });
+// ... your existing content above ...
+
+// Global alert stub so components can call alert() in tests without jsdom errors
+if (typeof globalThis.alert === "undefined") {
+  // @ts-ignore
+  globalThis.alert = jest.fn();
+}
+
+// (optional) A no-op scrollTo for any elements that try to call it
+if (!HTMLElement.prototype.scrollTo) {
+  HTMLElement.prototype.scrollTo = function () {};
+}
