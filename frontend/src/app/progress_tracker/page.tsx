@@ -79,7 +79,7 @@ export default function ProgressTracker() {
       cancelled = true;
       // support both real SDK and jest mocks
       sub?.subscription?.unsubscribe?.();
-      // @ts-expect-error
+      // @ts-expect-error - for jest mock compatibility
       sub?.unsubscribe?.();
     };
   }, [API_URL]);

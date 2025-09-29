@@ -173,7 +173,7 @@ export default function GroupSessionsPage({ params }: PageProps) {
         // support both real SDK and jest mocks
 
         sub?.subscription?.unsubscribe?.();
-        // @ts-expect-error
+        // @ts-expect-error - for jest mock compatibility
         sub?.unsubscribe?.();
       } catch {}
     };
