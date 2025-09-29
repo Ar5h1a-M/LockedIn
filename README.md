@@ -1,8 +1,7 @@
 ## Front end
 
-[![codecov](https://codecov.io/gh/your-username/your-repo-name/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/your-repo-name)
-[![Frontend Tests](https://github.com/your-username/your-repo-name/actions/workflows/your-frontend-workflow.yml/badge.svg)](https://github.com/your-username/your-repo-name/actions/workflows/your-frontend-workflow.yml)
-[![Backend Tests](https://github.com/your-username/your-repo-name/actions/workflows/your-backend-workflow.yml/badge.svg)](https://github.com/your-username/your-repo-name/actions/workflows/your-backend-workflow.yml)
+[![codecov](https://codecov.io/github/Ar5h1a-M/LockedIn/branch/update%2FtestingS3/graph/badge.svg?token=NOYATVMQTI)](https://codecov.io/github/Ar5h1a-M/LockedIn)
+
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

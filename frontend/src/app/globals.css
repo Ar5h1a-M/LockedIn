@@ -66,6 +66,40 @@ button:hover {
   box-shadow: 0 4px 10px rgba(255, 180, 0, 0.7);
 }
 
+button::after {
+  content: "";
+  position: absolute;
+  left: -50%;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.7s ease;
+}
+
+button:hover::after {
+  left: 100%;
+}
+
+/* Outline button style */
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  box-shadow: none;
+}
+
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
 /* Inputs */
 input,
 select,
@@ -104,6 +138,15 @@ form {
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(42, 58, 74, 0.15);
   max-width: 400px;
+  margin: 40px auto;
+}
+
+.form-container {
+  background-color: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(42, 58, 74, 0.15);
+  max-width: 800px;
   margin: 40px auto;
 }
 
@@ -226,6 +269,7 @@ button:hover::after {
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(42, 58, 74, 0.1);
 }
+
 
 
 .study-time-grid {

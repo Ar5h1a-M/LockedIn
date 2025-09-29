@@ -1,108 +1,261 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
-//import styles from "./page.module.css";
+import { supabase } from "@/lib/supabaseClient";
 
-
+type Group = { id: string; name?: string | null };
+type Session = {
+  id: string;
+  group_id: string;
+  creator_id: string;
+  start_at: string;
+  venue: string | null;
+  topic: string | null;
+  time_goal_minutes: number | null;
+  content_goal: string | null;
+};
+type Test = { id: string; name: string; scope?: string; test_date: string };
+type Friend = { id: string; full_name: string; email: string; degree?: string|null; };
 
 export default function DashboardPage() {
-  const [studyTime, setStudyTime] = useState({
-    today: "2h 15m",
-    week: "10h 40m",
-    weekend: "4h 20m",
-    month: "38h 10m",
-  });
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  const [upcomingTests, setUpcomingTests] = useState([
-    { subject: "Math", date: "2025-08-18" },
-    { subject: "History", date: "2025-08-22" },
-  ]);
+  const [studyTime, setStudyTime] = useState<Record<string, unknown> | null>(null);
+  const [upcomingTests, setUpcomingTests] = useState<Test[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [newTestName, setNewTestName] = useState("");
+  const [newTestDate, setNewTestDate] = useState("");
+  const [newTestScope, setNewTestScope] = useState("");
 
-  const [studySessions, setStudySessions] = useState([
-    { topic: "Biology - Photosynthesis", date: "2025-08-16", time: "15:00" },
-    { topic: "Physics - Mechanics", date: "2025-08-17", time: "10:00" },
-  ]);
+  const authHeaders = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  };
 
-  const [friends, setFriends] = useState(["Alice", "Bob", "Charlie"]);
+  // --- Loaders ---
+  const loadStudyTime = async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/study-time`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setStudyTime(data);
+      }
+    } catch (err) {
+      console.error("Study time error:", err);
+      setStudyTime({});
+    }
+  };
+
+  const loadTests = async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/upcoming`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setUpcomingTests(data.tests || []);
+      }
+    } catch (err) {
+      console.error("Load tests error:", err);
+    }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/groups`, { headers });
+      const data = await res.json();
+      const list: Group[] = data.groups || [];
+      setGroups(list);
+      if (!selectedGroupId && list[0]) setSelectedGroupId(list[0].id);
+    } catch (err) {
+      console.error("Load groups error:", err);
+    }
+  };
+
+  const loadSessions = async (groupId: string) => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_URL}/api/groups/${groupId}/sessions`, { headers });
+      const data = await res.json();
+      const list: Session[] = data.sessions || [];
+      list.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+      setSessions(list.slice(0, 1));
+    } catch (err) {
+      console.error("Load sessions error:", err);
+    }
+  };
+
+  const loadFriends = async () => {
+    const headers = await authHeaders();
+    const r = await fetch(`${API_URL}/api/friends`, { headers });
+    const j = await r.json();
+    setFriends(j.friends || []);
+  };
+  // --- Add Test ---
+  const handleAddTest = async () => {
+    if (!newTestName || !newTestDate) return;
+    try {
+      const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+      const res = await fetch(`${API_URL}/api/assessments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: newTestName, test_date: newTestDate, scope: newTestScope }),
+      });
+      if (res.ok) {
+        setShowTestModal(false);
+        setNewTestName("");
+        setNewTestDate("");
+        setNewTestScope("");
+        await loadTests();
+      } else {
+        const err = await res.json();
+        console.error("Add test failed:", err);
+      }
+    } catch (err) {
+      console.error("Add test error:", err);
+    }
+  };
 
   useEffect(() => {
-    // TODO: Replace with actual API calls
+    loadStudyTime();
+    loadTests();
+    loadGroups();
+    loadFriends();
   }, []);
+
+  useEffect(() => {
+    if (selectedGroupId) loadSessions(selectedGroupId);
+  }, [selectedGroupId]);
 
   return (
     <div className="dashboardLayout">
       <Sidebar />
-    <main className="dashboard-wrapper">
-      <h1>📊 Student Dashboard</h1>
+      <main className="dashboard-wrapper">
+        <h1>📊 Student Dashboard</h1>
 
-      {/* Study Time */}
-      <section className="dashboard-section">
-        <h2>Study Time</h2>
-        <div className="study-time-grid">
-          {Object.entries(studyTime).map(([label, value]) => (
-            <div key={label} className="card">
-              <span className="label">{label.toUpperCase()}</span>
-              <span className="value">{value}</span>
+        {/* Study Time */}
+        <section className="dashboard-section">
+          <h2>Study Time</h2>
+          {studyTime && Object.keys(studyTime).length ? (
+            <div className="study-time-grid">
+              {Object.entries(studyTime).map(([label, value]) => (
+                <div key={label} className="card">
+                  <span className="label">{label.toUpperCase()}</span>
+                  <span className="value">{String(value)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          ) : (
+            <p>Loading…</p>
+          )}
+        </section>
 
-      {/* Upcoming Tests */}
-      <section className="dashboard-section">
-        <h2>Upcoming Tests</h2>
-        {upcomingTests.length ? (
-          <ul className="list">
-            {upcomingTests.map((test, i) => (
-              <li key={i} className="list-item">
-                <span>{test.subject}</span>
-                <span className="date">{test.date}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No upcoming tests 🎉</p>
-        )}
-      </section>
+        {/* Upcoming Tests */}
+        <section className="dashboard-section">
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <h2>Upcoming Tests</h2>
+            <button onClick={() => setShowTestModal(true)}>➕ Add Test</button>
+          </div>
+          {upcomingTests.length ? (
+            <ul className="list">
+              {upcomingTests.map((t) => (
+                <li key={t.id} className="list-item">
+                  <span>{t.name}</span>
+                  <span className="date">{new Date(t.test_date).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No upcoming tests 🎉</p>
+          )}
+        </section>
 
-      {/* Upcoming Study Sessions */}
-      <section className="dashboard-section">
-        <h2>Upcoming Study Sessions</h2>
-        {studySessions.length ? (
-          <ul className="list">
-            {studySessions.map((session, i) => (
-              <li key={i} className="list-item">
-                <span>{session.topic}</span>
-                <span className="date">
-                  {session.date} at {session.time}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No upcoming study sessions 📚</p>
+        {/* Add Test Modal */}
+        {showTestModal && (
+          <div className="modal-overlay">
+            <div className="modal-card">
+              <h3>Add Test</h3>
+              <input
+                type="text"
+                placeholder="Test Name"
+                value={newTestName}
+                onChange={(e) => setNewTestName(e.target.value)}
+              />
+              <input
+                type="date"
+                placeholder="Test Date"
+                value={newTestDate}
+                onChange={(e) => setNewTestDate(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Scope"
+                value={newTestScope}
+                onChange={(e) => setNewTestScope(e.target.value)}
+              />
+              <div style={{ marginTop: 12 }}>
+                <button onClick={handleAddTest}>Add</button>
+                <button onClick={() => setShowTestModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
         )}
-      </section>
 
-      {/* Friends */}
-      <section className="dashboard-section">
-        <h2>Friends</h2>
-        {friends.length ? (
-          <ul className="friends-list">
-            {friends.map((friend, i) => (
-              <li key={i} className="friend-item">
-                {friend}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No friends yet 😢</p>
-        )}
-      </section>
-    </main>
+        {/* Study Sessions */}
+        <section className="dashboard-section">
+          <h2>Upcoming Study Session</h2>
+          {!sessions.length ? (
+            <p>No sessions yet.</p>
+          ) : (
+            <ul className="list">
+              {sessions.map((s) => (
+                <li key={s.id} className="list-item">
+                  <strong>{s.topic || "Study session"}</strong>
+                  <div>{new Date(s.start_at).toLocaleString()}</div>
+                  <div>Venue: {s.venue || "—"}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Friends */}
+        <section className="dashboard-section">
+          <h2>Friends</h2>
+          {friends.length ? (
+             <ul className="friends-list" >
+              {friends.map((f) => (
+                <li
+                  key={f.id}
+                  className="friend-item"
+                  style={{
+                    // display: "flex",
+                    alignItems: "center",
+                    background: "#007acc",
+                    color: "#fff",
+                    // padding: "4px 8px",
+                    // borderRadius: "6px",
+                  }}
+                >
+                  {f.full_name || "Unknown"}
+                </li>
+              ))}
+
+            </ul>
+
+          ) : (
+            <p>No friends yet 😢</p>
+          )}
+        </section>
+      </main>
+
     </div>
   );
 }
-
-
