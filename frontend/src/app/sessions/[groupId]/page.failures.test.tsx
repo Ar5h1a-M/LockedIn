@@ -1,6 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Page from "./page";
+import { GroupSessionsPageContent } from './page';
+
+
+function TestWrapper({ groupId }: { groupId: string }) {
+  return <Page params={Promise.resolve({ groupId })} />;
+}
 
 // Router mocks
 jest.mock("next/navigation", () => ({
@@ -92,7 +98,7 @@ describe("Sessions failure branches", () => {
   });
 
   it("shows alert when RSVP fails", async () => {
-    render(<Page params={{ groupId: "g1" }} />);
+    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
 
     // Wait for the list to render (async) and the Accept button to appear
     const acceptBtn = await screen.findByRole("button", { name: /accept/i });
@@ -104,7 +110,7 @@ describe("Sessions failure branches", () => {
   });
 
   it("shows alert when delete fails", async () => {
-    render(<Page params={{ groupId: "g1" }} />);
+    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
 
     // Wait for delete button to render (creator sees it)
     const deleteBtn = await screen.findByRole("button", { name: /delete/i });

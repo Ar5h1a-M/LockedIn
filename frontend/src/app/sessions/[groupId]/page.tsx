@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState,use } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Sidebar from "@/components/Sidebar";
 
@@ -32,7 +32,7 @@ type PageProps = {
   params: { groupId: string };
 };
 
-export default function GroupSessionsPage({ params }: PageProps) {
+export function GroupSessionsPageContent({ params }: PageProps) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
   const { groupId } = params;
 
@@ -576,6 +576,13 @@ export default function GroupSessionsPage({ params }: PageProps) {
           </section>
         </div>
       </main>
+      Group ID: {params.groupId}
     </div>
   );
+}
+
+// Default export that handles the async params
+export default function GroupSessionsPage({ params }: { params: Promise<{ groupId: string }> }) {
+  const resolvedParams = use(params);
+  return <GroupSessionsPageContent params={resolvedParams} />;
 }

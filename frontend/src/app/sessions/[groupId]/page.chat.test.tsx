@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Page from "./page";
+import { GroupSessionsPageContent } from './page';
 
 jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({ groupId: "g1" })),
@@ -71,7 +72,7 @@ describe("Sessions chat branches", () => {
   });
 
   it("uploads a file and sends with attachment_url", async () => {
-    render(<Page params={{ groupId: "g1" }} />);
+    render(<GroupSessionsPageContent params={{ groupId: 'g1' }} />);
 
     // wait for chat section to be present
     await screen.findByRole("heading", { level: 2, name: /group chat/i });
@@ -106,3 +107,4 @@ describe("Sessions chat branches", () => {
     });
   });
 });
+//render(<Page params={{ groupId: "g1" }} />);
