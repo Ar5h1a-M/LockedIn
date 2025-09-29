@@ -78,9 +78,8 @@ export default function ProgressTracker() {
     return () => {
       cancelled = true;
       // support both real SDK and jest mocks
-      // @ts-ignore
       sub?.subscription?.unsubscribe?.();
-      // @ts-ignore
+      // @ts-expect-error
       sub?.unsubscribe?.();
     };
   }, [API_URL]);

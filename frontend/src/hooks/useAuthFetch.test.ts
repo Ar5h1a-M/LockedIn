@@ -8,26 +8,28 @@ jest.mock("@/lib/supabaseClient", () => ({
   },
 }));
 
-const supabase = require("@/lib/supabaseClient").supabase;
+import { supabase } from "@/lib/supabaseClient";
 
 describe("authFetch", () => {
   it("throws without token", async () => {
-    supabase.auth.getSession.mockResolvedValue({ data: { session: null } });
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({ 
+      data: { session: null } 
+    });
     await expect(authFetch("/api/x")).rejects.toThrow(/Unauthorized/);
   });
 
   it("attaches Authorization header", async () => {
-    supabase.auth.getSession.mockResolvedValue({
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({
       data: { session: { access_token: "abc" } },
     });
     const globalFetch = jest
-  .spyOn(global as typeof globalThis, "fetch")
-  .mockResolvedValue({ ok: true } as Response);
-await authFetch("/api/x", { method: "POST", body: JSON.stringify({}) });
-expect(globalFetch).toHaveBeenCalled();
-const [, init] = globalFetch.mock.calls[0];
-const headers = init?.headers as Record<string, string>;
-expect(headers?.Authorization).toBe("Bearer abc");
-globalFetch.mockRestore();
+      .spyOn(global as typeof globalThis, "fetch")
+      .mockResolvedValue({ ok: true } as Response);
+    await authFetch("/api/x", { method: "POST", body: JSON.stringify({}) });
+    expect(globalFetch).toHaveBeenCalled();
+    const [, init] = globalFetch.mock.calls[0];
+    const headers = init?.headers as Record<string, string>;
+    expect(headers?.Authorization).toBe("Bearer abc");
+    globalFetch.mockRestore();
   });
 });

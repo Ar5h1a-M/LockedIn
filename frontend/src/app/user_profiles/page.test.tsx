@@ -63,7 +63,7 @@ afterAll(() => {
   console.error = originalError;
 });
 
-const { supabase } = require('@/lib/supabaseClient');
+import { supabase } from '@/lib/supabaseClient';
 
 describe('ProfilePage', () => {
   const mockPush = jest.fn();
@@ -96,7 +96,7 @@ describe('ProfilePage', () => {
       push: mockPush,
     });
 
-    supabase.auth.getSession.mockResolvedValue(mockSession);
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue(mockSession);
     
     // Mock environment variable
     process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
@@ -136,7 +136,7 @@ describe('ProfilePage', () => {
     });
 
     it('redirects to login when not authenticated', async () => {
-      supabase.auth.getSession.mockResolvedValue({
+      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: null },
       });
 
@@ -486,7 +486,7 @@ describe('ProfilePage', () => {
 
   describe('Navigation', () => {
     it('navigates to login when login button is clicked', async () => {
-      supabase.auth.getSession.mockResolvedValue({
+      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: null },
       });
 

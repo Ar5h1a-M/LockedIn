@@ -20,7 +20,6 @@ jest.mock("@/lib/supabaseClient", () => ({
 
 beforeAll(() => {
   // Extra safety for charts
-  // @ts-ignore
   global.ResizeObserver = global.ResizeObserver || class {
     observe() {}
     unobserve() {}
@@ -33,7 +32,6 @@ describe("Progress Tracker", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // @ts-ignore
     window.alert = jest.fn();
    global.fetch = fetchMock as typeof fetch;
 

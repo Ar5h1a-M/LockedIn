@@ -29,8 +29,8 @@ describe("Sessions/[groupId] page", () => {
 
   beforeEach(() => {
     // jsdom doesn't implement scrollTo – stub it
-    (window.HTMLElement.prototype as any).scrollTo = function () {};
-    (global as any).fetch = fetchMock;
+    (window.HTMLElement.prototype as unknown as { scrollTo: () => void }).scrollTo = function () {};
+    global.fetch = fetchMock as typeof fetch;
 
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);

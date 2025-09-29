@@ -27,15 +27,15 @@ describe("Login network error branch", () => {
       throw new Error("boom");
     });
     // silence UI alert
-    // @ts-ignore
+  
     window.alert = jest.fn();
     
-    // 👇 ADD THIS: Mock the environment variable
+
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3001";
   });
 
   afterEach(() => {
-    // 👇 ADD THIS: Clean up the environment variable
+
     delete process.env.NEXT_PUBLIC_API_URL;
   });
 

@@ -171,9 +171,9 @@ export default function GroupSessionsPage({ params }: PageProps) {
       clearInterval(poll);
       try {
         // support both real SDK and jest mocks
-        // @ts-ignore
+
         sub?.subscription?.unsubscribe?.();
-        // @ts-ignore
+        // @ts-expect-error
         sub?.unsubscribe?.();
       } catch {}
     };
