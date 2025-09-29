@@ -71,3 +71,34 @@ global.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 };
+// Polyfill BroadcastChannel (needed by msw/ws in tests)
+if (typeof global.BroadcastChannel === "undefined") {
+  class DummyBroadcastChannel {
+    constructor(name) { this.name = name; this.onmessage = null; }
+    postMessage() {}
+    close() {}
+    addEventListener() {}
+    removeEventListener() {}
+  }
+  // @ts-ignore
+  global.BroadcastChannel = DummyBroadcastChannel;
+}
+
+// Add Response.json static if missing
+try {
+  if (typeof Response !== "undefined" && typeof (Response).json !== "function") {
+    // @ts-ignore
+    Response.json = function (data, init = {}) {
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" },
+        ...init,
+      });
+    };
+  }
+} catch {}
+
+// Clean between tests
+afterEach(() => {
+  jest.clearAllMocks();
+  try { jest.clearAllTimers(); } catch {}
+});
