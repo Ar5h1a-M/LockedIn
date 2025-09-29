@@ -1,3 +1,5 @@
+// frontend/src/app/login/page.network-error.test.tsx
+
 import { render, waitFor } from "@testing-library/react";
 import Page from "./page";
 
@@ -10,7 +12,6 @@ jest.mock("@/lib/supabaseClient", () => ({
       onAuthStateChange: jest.fn(() => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
-      // ✅ your component calls signOut() on failure
       signOut: jest.fn().mockResolvedValue({}),
     },
   },
@@ -28,6 +29,14 @@ describe("Login network error branch", () => {
     // silence UI alert
     // @ts-ignore
     window.alert = jest.fn();
+    
+    // 👇 ADD THIS: Mock the environment variable
+    process.env.NEXT_PUBLIC_API_URL = "http://localhost:3001";
+  });
+
+  afterEach(() => {
+    // 👇 ADD THIS: Clean up the environment variable
+    delete process.env.NEXT_PUBLIC_API_URL;
   });
 
   it("handles thrown fetch", async () => {
@@ -35,14 +44,3 @@ describe("Login network error branch", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
   });
 });
-
-jest.mock("@/lib/supabaseClient", () => ({
-  supabase: {
-    auth: {
-      getSession: jest.fn().mockResolvedValue({ data: { session: { access_token: "tok" } } }),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-      // 👇 add this to satisfy page.tsx error branch
-      signOut: jest.fn().mockResolvedValue({}),
-    },
-  },
-}));

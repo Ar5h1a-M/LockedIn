@@ -1,5 +1,7 @@
 // --- Minimal, robust polyfills first --- 
 // For libs that expect these in Node test env:
+
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
 const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
