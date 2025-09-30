@@ -111,7 +111,7 @@ export default function ProgressTracker() {
         }
 
         // 2) direct fallback
-        resp = await fetch("https://raceiq-api.azurewebsites.net/api/races");
+        resp = await fetch("/api/f1");
         if (resp.ok) {
           setRaces(parse(await resp.json()));
           return;
