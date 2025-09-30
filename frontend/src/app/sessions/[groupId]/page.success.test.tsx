@@ -77,10 +77,10 @@ describe("Sessions success branches", () => {
         return Promise.resolve(new Response(JSON.stringify({ sessions: [] }), { status: 200 }));
       }
 
-      // RSVP success
-      if (/\/api\/sessions\/s1\/rsvp$/.test(url) && init?.method === "POST") {
-        return Promise.resolve(new Response("{}", { status: 200 }));
-      }
+      // // RSVP success
+      // if (/\/api\/sessions\/s1\/rsvp$/.test(url) && init?.method === "POST") {
+      //   return Promise.resolve(new Response("{}", { status: 200 }));
+      // }
 
       // DELETE success
       if (/\/api\/groups\/g1\/sessions\/s1$/.test(url) && init?.method === "DELETE") {
@@ -92,29 +92,29 @@ describe("Sessions success branches", () => {
     });
   });
 
-  it("accepts RSVP successfully and refreshes", async () => {
-     (use as jest.Mock).mockReturnValue({ groupId: 'g1' });
-    render(<Page params={Promise.resolve({ groupId: 'g1' })} />);
+  // it("accepts RSVP successfully and refreshes", async () => {
+  //    (use as jest.Mock).mockReturnValue({ groupId: 'g1' });
+  //   render(<Page params={Promise.resolve({ groupId: 'g1' })} />);
 
-    // Wait until the Upcoming Sessions card shows up (list is loaded)
-    await screen.findByRole("heading", { level: 2, name: /upcoming sessions/i });
+  //   // Wait until the Upcoming Sessions card shows up (list is loaded)
+  //   await screen.findByRole("heading", { level: 2, name: /upcoming sessions/i });
 
-    const acceptBtn = await screen.findByRole("button", { name: /accept/i });
-    await userEvent.click(acceptBtn);
+  //   const acceptBtn = await screen.findByRole("button", { name: /accept/i });
+  //   await userEvent.click(acceptBtn);
 
-    await waitFor(() => {
-      // assert RSVP POST happened
-      expect(
-        fetchMock.mock.calls.some(
-          ([u, i]) => String(u).endsWith("/api/sessions/s1/rsvp") && (i as RequestInit)?.method === "POST"
-        )
-      ).toBe(true);
-      // and component refetched sessions after success
-      expect(
-        fetchMock.mock.calls.some(([u]) => String(u).endsWith("/api/groups/g1/sessions"))
-      ).toBe(true);
-    });
-  });
+  //   await waitFor(() => {
+  //     // // assert RSVP POST happened
+  //     // expect(
+  //     //   fetchMock.mock.calls.some(
+  //     //     ([u, i]) => String(u).endsWith("/api/sessions/s1/rsvp") && (i as RequestInit)?.method === "POST"
+  //     //   )
+  //     // ).toBe(true);
+  //     // and component refetched sessions after success
+  //     expect(
+  //       fetchMock.mock.calls.some(([u]) => String(u).endsWith("/api/groups/g1/sessions"))
+  //     ).toBe(true);
+  //   });
+  // });
 
   it("deletes a session successfully and removes it from the list", async () => {
      (use as jest.Mock).mockReturnValue({ groupId: 'g1' });

@@ -26,7 +26,7 @@ type ChatMessage = {
   created_at: string;
 };
 
-type RSVPStatus = "accepted" | "declined" | "none";
+
 
 type PageProps = {
   params: Promise<{ groupId: string }>;
@@ -232,22 +232,7 @@ export default function GroupSessionsPage({ params }: PageProps) {
     }
   };
 
-  const rsvpSession = async (sessionId: string, status: RSVPStatus) => {
-    try {
-      const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
-      const r = await fetch(`${API_URL}/api/sessions/${sessionId}/rsvp`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ status }),
-      });
-      const j = await r.json();
-      if (!r.ok) return alert(j?.error || "Failed to update RSVP");
-      // re-sync for conflict logic and list
-      await Promise.all([loadMyAccepted(), loadSessions()]);
-    } catch {
-      alert("RSVP failed");
-    }
-  };
+
 
   const sendMessage = async () => {
     if (!message && !file) return;
@@ -296,287 +281,124 @@ export default function GroupSessionsPage({ params }: PageProps) {
   };
 
   return (
-    <div className="dashboardLayout">
-      <Sidebar />
+  <div className="dashboardLayout">
+              <Sidebar />
       <main className="dashboardContent ">
-        <div className="dashboard-wrapper">
-          <header
-            className="dashboard-header"
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-          >
-            <h1>📅 Group Sessions</h1>
-          </header>
+      <div className="dashboard-wrapper">
+      <header className="dashboard-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <h1>📅 Group Sessions</h1>
+      </header>
 
-          {/* Planner */}
-          <section
-            className="dashboard-section"
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-          >
-            <div className="card">
-              <h2>Plan a Study Session</h2>
-              <label>Date & time</label>
-              <input
-                type="datetime-local"
-                value={startAt}
-                onChange={(e) => setStartAt(e.target.value)}
-              />
-              <label>Venue</label>
-              <input
-                value={venue}
-                onChange={(e) => setVenue(e.target.value)}
-                placeholder="e.g., Library Room 3"
-              />
-              <label>What will we study?</label>
-              <input
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g., Linear Algebra Ch. 4"
-              />
-              <label>Study time goal (minutes)</label>
-              <input
-                type="number"
-                min="0"
-                value={timeGoal}
-                onChange={(e) =>
-                  setTimeGoal(e.target.value === "" ? "" : Number(e.target.value))
-                }
-              />
-              <label>Content goal</label>
-              <input
-                value={contentGoal}
-                onChange={(e) => setContentGoal(e.target.value)}
-                placeholder="e.g., Finish problem set Q1–Q5"
-              />
-              <button onClick={createSession}>Create session</button>
-            </div>
-
-            <div className="card">
-              <h2>Upcoming Sessions</h2>
-
-              {conflictBanner && (
-                <div
-                  style={{
-                    marginBottom: 8,
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #fecaca",
-                  }}
-                >
-                  {conflictBanner}
-                </div>
-              )}
-              {!!unavailablePeople.length && (
-                <div
-                  style={{
-                    marginBottom: 8,
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    background: "#fff7ed",
-                    color: "#9a3412",
-                    border: "1px solid #fed7aa",
-                  }}
-                >
-                  Some people aren’t available for the next session:{" "}
-                  {unavailablePeople.join(", ")}
-                </div>
-              )}
-
-              {!sessions.length ? (
-                <p>No sessions yet.</p>
-              ) : (
-                <ul className="list" style={{ maxHeight: 260, overflow: "auto" }}>
-                  {sessions.map((s) => {
-                    const sStart = sessionStart(s);
-                    const sEnd = sessionEnd(s);
-                    const iHaveConflict = myAccepted.some((m) =>
-                      overlaps(sStart, sEnd, sessionStart(m), sessionEnd(m))
-                    );
-
-                    return (
-                      <li key={s.id} className="list-item" style={{ display: "grid", gap: 6 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <strong>{sStart.toLocaleString()}</strong>
-                          {iHaveConflict && (
-                            <span
-                              style={{
-                                fontSize: 12,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                background: "#fee2e2",
-                                color: "#991b1b",
-                                border: "1px solid #fecaca",
-                              }}
-                            >
-                              Conflicts with your schedule
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <small>Venue: {s.venue || "—"}</small>
-                        </div>
-                        <div>
-                          <small>Topic: {s.topic || "—"}</small>
-                        </div>
-                        <div>
-                          <small>
-                            Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}
-                          </small>
-                        </div>
-                        <div>
-                          <small>Content goal: {s.content_goal || "—"}</small>
-                        </div>
-
-                        {/* RSVP + Delete */}
-                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                          <button
-                            onClick={() => {
-                              if (
-                                iHaveConflict &&
-                                !confirm("This overlaps an accepted session. Accept anyway?")
-                              )
-                                return;
-                              rsvpSession(s.id, "accepted");
-                            }}
-                            style={{ padding: "6px 10px" }}
-                          >
-                            ✅ Accept
-                          </button>
-                          <button
-                            onClick={() => rsvpSession(s.id, "declined")}
-                            style={{ padding: "6px 10px" }}
-                          >
-                            ❌ Decline
-                          </button>
-
-                          {/* Delete button (only for creator) */}
-                          {me === s.creator_id && (
-                            <button
-                              onClick={() => handleDeleteSession(s.id)}
-                              style={{ marginLeft: "auto", color: "white" }}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </section>
-
-          {/* Chat */}
-          <section
-            className="dashboard-section"
-            style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr", gap: 16 }}
-          >
-            <div className="card">
-              <h2>Group Chat</h2>
-              <div
-                ref={listRef}
-                style={{
-                  height: 320,
-                  border: "1px solid #eee",
-                  borderRadius: 8,
-                  padding: 12,
-                  background: "#f8fafc",
-                }}
-              >
-                {messages.map((m) => {
-                  const mine = m.sender_id === me;
-                  return (
-                    <div
-                      key={m.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: mine ? "flex-end" : "flex-start",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "75%",
-                          background: mine ? "#DCF8C6" : "#ffffff",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 12,
-                          padding: "8px 10px",
-                          boxShadow: "0 1px 2px rgba(0,0,0,.06)",
-                        }}
-                      >
-                        {!mine && (
-                          <div
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              marginBottom: 4,
-                              color: "#475569",
-                            }}
-                          >
-                            {m.sender_name || "Unknown"}
-                          </div>
-                        )}
-                        {m.content && <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>}
-                        {m.attachment_url && (
-                          <div style={{ marginTop: 6 }}>
-                            <a href={m.attachment_url} target="_blank" rel="noreferrer">
-                              📎 Attachment
-                            </a>
-                          </div>
-                        )}
-                        <div
-                          style={{
-                            fontSize: 11,
-                            textAlign: "right",
-                            color: "#64748b",
-                            marginTop: 4,
-                          }}
-                        >
-                          {new Date(m.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div style={{ gap: 8, marginTop: 8, alignItems: "flex-end" }}>
-                <textarea
-                  style={{
-                    flex: 1,
-                    minHeight: 90,
-                    resize: "vertical",
-                    padding: 10,
-                    borderRadius: 8,
-                    border: "1px solid #e5e7eb",
-                  }}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Write a message… (Shift+Enter for newline)"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                />
-                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                <button onClick={sendMessage} disabled={sending}>
-                  {sending ? "Sending…" : "Send"}
-                </button>
-              </div>
-            </div>
-          </section>
+      {/* Planner */}
+      <section className="dashboard-section" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div className="card">
+          <h2>Plan a Study Session</h2>
+          <label>Date & time</label>
+          <input type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)} />
+          <label>Venue</label>
+          <input value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g., Library Room 3" />
+          <label>What will we study?</label>
+          <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g., Linear Algebra Ch. 4" />
+          <label>Study time goal (minutes)</label>
+          <input type="number" min="0" value={timeGoal} onChange={e => setTimeGoal(e.target.value === "" ? "" : Number(e.target.value))} />
+          <label>Content goal</label>
+          <input value={contentGoal} onChange={e => setContentGoal(e.target.value)} placeholder="e.g., Finish problem set Q1–Q5" />
+          <button onClick={createSession}>Create session</button>
         </div>
-      </main>
+
+        <div className="card">
+          <h2>Upcoming Sessions</h2>
+          {!sessions.length ? <p>No sessions yet.</p> : (
+            <ul className="list" style={{ maxHeight: 260, overflow: "auto" }}>
+              {sessions.map(s => (
+                <li key={s.id} className="list-item">
+                  <strong>{new Date(s.start_at).toLocaleString()}</strong>
+                  <div><small>Venue: {s.venue || "—"}</small></div>
+                  <div><small>Topic: {s.topic || "—"}</small></div>
+                  <div><small>Time goal: {s.time_goal_minutes ? `${s.time_goal_minutes} min` : "—"}</small></div>
+                  <div><small>Content goal: {s.content_goal || "—"}</small></div>
+
+                  {/* Delete button (only for creator) */}
+                  {me === s.creator_id && (
+                    <button
+                      onClick={() => handleDeleteSession(s.id)}
+                      style={{ marginTop: "6px", color: "white" }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {/* Chat */}
+      <section className="dashboard-section" style={{ marginTop:16, display:"grid", gridTemplateColumns:"1fr", gap:16 }}>
+        <div className="card">
+          <h2>Group Chat</h2>
+          <div ref={listRef}
+              style={{ height: 320,  border: "1px solid #eee",
+                        borderRadius: 8, padding: 12, background:"#f8fafc" }}>
+            {messages.map(m => {
+              const mine = m.sender_id === me;
+              return (
+                <div key={m.id} style={{
+                  display:"flex",
+                  justifyContent: mine ? "flex-end" : "flex-start",
+                  marginBottom: 10
+                }}>
+                  <div style={{
+                    maxWidth: "75%",
+                    background: mine ? "#DCF8C6" : "#ffffff", // WA vibe
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 12,
+                    padding: "8px 10px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,.06)"
+                  }}>
+                    {!mine && (
+                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color:"#475569" }}>
+                        {m.sender_name || "Unknown"}
+                      </div>
+                    )}
+                    {m.content && <div style={{ whiteSpace:"pre-wrap" }}>{m.content}</div>}
+                    {m.attachment_url && (
+                      <div style={{ marginTop: 6 }}>
+                        <a href={m.attachment_url} target="_blank" rel="noreferrer">📎 Attachment</a>
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, textAlign:"right", color:"#64748b", marginTop: 4 }}>
+                      {new Date(m.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{  gap:8, marginTop:8, alignItems:"flex-end" }}>
+            <textarea
+              style={{ flex:1, minHeight: 90, resize: "vertical", padding: 10, borderRadius:8, border:"1px solid #e5e7eb" }}
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder="Write a message… (Shift+Enter for newline)"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} />
+            <button onClick={sendMessage} disabled={sending}>
+              {sending ? "Sending…" : "Send"}
+            </button>
+          </div>
+        </div>
+      </section>
+      </div>
+    </main>
     </div>
   );
 }

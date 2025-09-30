@@ -99,7 +99,5 @@ describe("Sessions/[groupId] page", () => {
     // Shows the session details
     expect(screen.getByText(/venue:\s*library/i)).toBeInTheDocument();
     expect(screen.getByText(/topic:\s*Math/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
   });
 });
