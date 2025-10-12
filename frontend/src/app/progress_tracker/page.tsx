@@ -133,6 +133,7 @@ export default function ProgressTracker() {
     if (val === "") return "Enter hours (number > 0).";
     if (typeof val !== "number" || Number.isNaN(val)) return "Please enter a valid number.";
     if (val <= 0) return "Hours must be greater than 0.";
+    if (val > 23) return "Maximum 23 hours per day allowed."; 
     return null;
   };
 
