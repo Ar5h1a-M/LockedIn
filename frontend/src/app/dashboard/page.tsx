@@ -161,10 +161,24 @@ export default function DashboardPage() {
 
         {/* Upcoming Tests */}
         <section className="dashboard-section">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <h2>Upcoming Tests</h2>
-            <button onClick={() => setShowTestModal(true)}>➕ Add Test</button>
-          </div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
+  <h2 style={{ margin: 0 }}>Upcoming Tests</h2>
+  <button
+    onClick={() => setShowTestModal(true)}
+    style={{
+      padding: "7px 5px",
+      fontSize: "0.9rem",
+      borderRadius: "8px",
+      background: "linear-gradient(90deg, #2b8efc, #60a5fa)",
+      color: "#fff",
+      border: "none",
+      cursor: "pointer",
+    }}
+  >
+    ➕ Add Test
+  </button>
+</div>
+
           {upcomingTests.length ? (
             <ul className="list">
               {upcomingTests.map((t) => (
