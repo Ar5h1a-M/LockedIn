@@ -2,6 +2,7 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SignUp from './page';
+import { useRouter } from 'next/navigation';
 
 
 
@@ -256,8 +257,7 @@ describe('SignUp Component - User Already Exists', () => {
 
     // The component should NOT redirect to dashboard when profile check returns 409
     // Instead, it should show the signup form
-    const useRouter = require('next/navigation').useRouter;
-    const mockPush = useRouter().push;
+      const { push: mockPush } = useRouter();
     
     await waitFor(() => {
       expect(mockPush).not.toHaveBeenCalledWith('/dashboard');
