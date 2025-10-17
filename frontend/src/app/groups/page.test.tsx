@@ -24,10 +24,13 @@ jest.mock("@/components/Sidebar", () => {
 });
 
 jest.mock("next/link", () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
   );
+  MockLink.displayName = "MockLink";
+  return MockLink;
 });
+
 
 const fetchMock = jest.fn();
 global.fetch = fetchMock as typeof fetch;

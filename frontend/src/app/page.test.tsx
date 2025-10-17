@@ -45,10 +45,10 @@ jest.mock("next/link", () => ({
     children: React.ReactNode;
     href: string;
   }) {
-    const router = require("next/navigation").useRouter();
+    const { push: mockPush } = useRouter();
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       e.preventDefault();
-      router.push(href);
+      mockPush(href);
     };
     return (
       <a href={href} onClick={handleClick}>
