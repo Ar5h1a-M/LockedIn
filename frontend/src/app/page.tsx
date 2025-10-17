@@ -50,7 +50,7 @@ export default function LandingPage() {
               </p>
               <p>
                 We experienced this firsthand. Our group started with just 3 people, and we desperately needed 
-                to find 2-3 more members to complete our team. We were stressed, overwhelmed, and didn't know 
+                to find 2-3 more members to complete our team. We were stressed, overwhelmed, and didn&apos;t know 
                 where to turn.
               </p>
               <p>
@@ -60,7 +60,7 @@ export default function LandingPage() {
               </p>
               <p className={styles.highlight}>
                 With an app like LockedIn, we could have found our teammates sooner, with more trust and ease. 
-                That's exactly what we want to provide for you.
+                That&apos;s exactly what we want to provide for you.
               </p>
             </div>
           </div>
@@ -83,10 +83,10 @@ export default function LandingPage() {
         <p className={styles.missionText}>
           LockedIn is the backbone for students who want to <strong>Lock TF In</strong> 
            and focus on their studies and projects. Whether you need study partners for motivation, 
-          teammates for projects, or just want someone to test your knowledge, we've got you covered.
+          teammates for projects, or just want someone to test your knowledge, we&apos;ve got you covered.
         </p>
         <div className={styles.missionQuote}>
-          <p>"From strangers to study partners - we make academic collaboration effortless."</p>
+          <p>&ldquo;From strangers to study partners - we make academic collaboration effortless.&ldquo;</p>
         </div>
       </section>
 
