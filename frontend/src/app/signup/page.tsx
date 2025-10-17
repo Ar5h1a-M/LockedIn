@@ -96,7 +96,7 @@ export default function SignUp() {
   }, [API_URL, router]);
 
   // Auto-complete signup after OAuth return
-  const autoCompleteSignup = async (access_token: string, formData: any) => {
+  const autoCompleteSignup = async (access_token: string, formData: unknown) => {
     setIsLoading(true);
     try {
       const resp = await fetch(`${API_URL}/api/auth/signup`, {
