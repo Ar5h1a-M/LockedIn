@@ -11,23 +11,53 @@ jest.mock("next/navigation", () => ({
 // Mock next/image
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ src, alt, width, height, className }: any) => {
-    return <img src={src} alt={alt} width={width} height={height} className={className} data-testid={alt} />;
-  },
+  default: ({
+    src,
+    alt,
+    width,
+    height,
+    className,
+  }: {
+    src: string;
+    alt: string;
+    width?: number;
+    height?: number;
+    className?: string;
+  }) => (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      data-testid={alt}
+    />
+  ),
 }));
 
-// Mock next/link - this is the key fix for navigation
+// Mock next/link - must use PascalCase to avoid Hook rule violation
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ children, href }: any) => {
-    const router = useRouter();
-    const handleClick = (e: any) => {
+  default: function MockLink({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) {
+    const router = require("next/navigation").useRouter();
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       e.preventDefault();
       router.push(href);
     };
-    return <a href={href} onClick={handleClick}>{children}</a>;
+    return (
+      <a href={href} onClick={handleClick}>
+        {children}
+      </a>
+    );
   },
 }));
+
 
 describe("LandingPage", () => {
   beforeEach(() => {

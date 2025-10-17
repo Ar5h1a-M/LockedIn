@@ -3,6 +3,8 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SignUp from './page';
 
+
+
 // Mock the dependencies first
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({
@@ -46,20 +48,37 @@ jest.mock('react-icons/fa', () => ({
 }));
 
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
+
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
 // Mock fetch globally
 global.fetch = jest.fn();
 global.alert = jest.fn();
 
-// Helper to get the mocked supabase functions
+// Extend the Supabase module type to include our mock property
+import * as SupabaseModule from '@/lib/supabaseClient';
+
+type SupabaseWithMocks = typeof SupabaseModule & {
+  __mocks: {
+    mockSignInWithOAuth: jest.Mock;
+    mockGetSession: jest.Mock;
+    mockSignOut: jest.Mock;
+  };
+};
+
 function getSupabaseMocks() {
-  const supabaseModule = require('@/lib/supabaseClient');
-  return supabaseModule.__mocks;
+  return (SupabaseModule as SupabaseWithMocks).__mocks;
 }
+
 
 describe('SignUp Component - User Already Exists', () => {
   let mockSignInWithOAuth: jest.Mock;
